@@ -7,20 +7,20 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Plus } from 'lucide-react';
-import { Invoice, InvoiceItem } from '@/types';
 
 interface CreateInvoiceProps {
   type: 'regular' | 'hourly';
 }
 
 export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
-  const { addInvoice, user, invoices } = useApp();
+  const { addInvoice, user } = useApp();
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientCompany, setClientCompany] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [reference, setReference] = useState('');
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const [items, setItems] = useState<{ description: string; qty: number; amount: number; hours: number; rate: number }[]>([
     { description: '', qty: 1, amount: 0, hours: 0, rate: 0 },
@@ -51,11 +51,11 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
     setItems(p => p.map((item, i) => i === idx ? { ...item, [field]: val } : item));
   };
 
-  const handleSave = () => {
-    const invId = `INV-${String(invoices.length + 1).padStart(3, '0')}`;
-    const invoiceItems: InvoiceItem[] = items.map((item, i) => ({
-      id: `item_${invId}_${i + 1}`,
-      invoice_id: invId,
+  const handleSave = async () => {
+    setSaving(true);
+    const invoiceItems = items.map((item, i) => ({
+      id: '',
+      invoice_id: '',
       item_no: i + 1,
       description: item.description,
       quantity: type === 'regular' ? item.qty : 0,
@@ -65,9 +65,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
       item_total: type === 'regular' ? item.qty * item.amount : item.hours * item.rate,
     }));
 
-    const inv: Invoice = {
-      id: invId,
-      user_id: user?.id || 'usr_001',
+    await addInvoice({
       invoice_type: type,
       client_name: clientName,
       client_email: clientEmail,
@@ -76,7 +74,6 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
       invoice_date: new Date().toISOString().split('T')[0],
       due_date: dueDate,
       total_amount: total,
-      status: 'pending',
       paid: false,
       paid_date: null,
       reminder_email_body: displayEmail,
@@ -86,10 +83,10 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
       reminder_after_7: reminders.after_7,
       reminder_after_14: reminders.after_14,
       logo_url: null,
-      created_at: new Date().toISOString(),
       items: invoiceItems,
-    };
-    addInvoice(inv);
+    });
+
+    setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
     setClientName(''); setClientEmail(''); setClientCompany(''); setDueDate(''); setReference('');
@@ -116,7 +113,6 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Left: Form */}
           <div className="space-y-6">
-            {/* Client info */}
             <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
               <h3 className="font-semibold text-foreground">Client Information</h3>
               <div className="grid grid-cols-2 gap-4">
@@ -145,7 +141,6 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               </div>
             </div>
 
-            {/* Items */}
             <div className="bg-card rounded-xl p-6 shadow-card">
               <h3 className="font-semibold text-foreground mb-4">Invoice Items</h3>
               <div className="space-y-3">
@@ -194,7 +189,6 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               </div>
             </div>
 
-            {/* Reminders */}
             <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
               <h3 className="font-semibold text-foreground">Reminder Settings</h3>
               <div className="flex flex-wrap gap-4">
@@ -216,7 +210,6 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               </div>
             </div>
 
-            {/* Email preview */}
             <div className="bg-card rounded-xl p-6 shadow-card space-y-3">
               <h3 className="font-semibold text-foreground">Email Reminder Preview</h3>
               <Textarea
@@ -227,8 +220,8 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               />
             </div>
 
-            <Button onClick={handleSave} className="w-full h-11" disabled={!clientName || !dueDate}>
-              Save Invoice
+            <Button onClick={handleSave} className="w-full h-11" disabled={!clientName || !dueDate || saving}>
+              {saving ? 'Saving…' : 'Save Invoice'}
             </Button>
           </div>
 
@@ -244,7 +237,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                 </div>
                 <div className="text-right">
                   <h2 className="text-2xl font-bold text-foreground">INVOICE</h2>
-                  <p className="text-sm text-muted-foreground">INV-{String(invoices.length + 1).padStart(3, '0')}</p>
+                  <p className="text-sm text-muted-foreground">New Invoice</p>
                 </div>
               </div>
             </div>
