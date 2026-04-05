@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
 
 export default function ActivityLogsPage() {
-  const { activityLogs } = useApp();
+  const { activityLogs, invoices } = useApp();
+  const invoiceMap = useMemo(() => new Map(invoices.map(i => [i.id, i.invoice_number])), [invoices]);
   const [search, setSearch] = useState('');
   const [filterAction, setFilterAction] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
@@ -68,7 +69,7 @@ export default function ActivityLogsPage() {
               <tbody>
                 {filtered.map(log => (
                   <tr key={log.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="p-3 text-muted-foreground font-mono text-xs">{log.id}</td>
+                    <td className="p-3 text-muted-foreground font-mono text-xs">{log.log_number}</td>
                     <td className="p-3 text-foreground">{log.user_id}</td>
                     <td className="p-3">
                       <span className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
@@ -77,7 +78,7 @@ export default function ActivityLogsPage() {
                     </td>
                     <td className="p-3 text-foreground">{log.description}</td>
                     <td className="p-3 text-muted-foreground text-xs">{new Date(log.created_at).toLocaleString()}</td>
-                    <td className="p-3 font-medium text-primary">{log.invoice_id || '—'}</td>
+                    <td className="p-3 font-medium text-primary">{log.invoice_id ? (invoiceMap.get(log.invoice_id) || log.invoice_id) : '—'}</td>
                   </tr>
                 ))}
               </tbody>

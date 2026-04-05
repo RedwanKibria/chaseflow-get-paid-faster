@@ -21,6 +21,7 @@ export type Database = {
           description: string
           id: string
           invoice_id: string | null
+          log_number: string | null
           user_id: string
         }
         Insert: {
@@ -29,6 +30,7 @@ export type Database = {
           description: string
           id?: string
           invoice_id?: string | null
+          log_number?: string | null
           user_id: string
         }
         Update: {
@@ -37,6 +39,7 @@ export type Database = {
           description?: string
           id?: string
           invoice_id?: string | null
+          log_number?: string | null
           user_id?: string
         }
         Relationships: [
@@ -112,6 +115,7 @@ export type Database = {
           due_date: string
           id: string
           invoice_date: string
+          invoice_number: string | null
           invoice_reference: string | null
           invoice_type: string
           logo_url: string | null
@@ -136,6 +140,7 @@ export type Database = {
           due_date: string
           id?: string
           invoice_date?: string
+          invoice_number?: string | null
           invoice_reference?: string | null
           invoice_type: string
           logo_url?: string | null
@@ -160,6 +165,7 @@ export type Database = {
           due_date?: string
           id?: string
           invoice_date?: string
+          invoice_number?: string | null
           invoice_reference?: string | null
           invoice_type?: string
           logo_url?: string | null

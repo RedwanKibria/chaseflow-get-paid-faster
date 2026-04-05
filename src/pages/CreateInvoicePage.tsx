@@ -30,20 +30,14 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
     before_3: true, due: true, after_3: false, after_7: false, after_14: false,
   });
 
+  const total = useMemo(() => items.reduce((s, i) => s + (type === 'regular' ? i.qty * i.amount : i.hours * i.rate), 0), [items, type]);
+
   const defaultReminder = useMemo(() => {
-    const parts: string[] = [];
-    if (reminders.before_3) parts.push('3 days before due date');
-    if (reminders.due) parts.push('on due date');
-    if (reminders.after_3) parts.push('3 days after');
-    if (reminders.after_7) parts.push('7 days after');
-    if (reminders.after_14) parts.push('14 days after');
-    return `Dear ${clientName || '[Client Name]'},\n\nThis is a friendly reminder regarding your invoice${reference ? ` (ref: ${reference})` : ''}. Payment is scheduled ${parts.length ? parts.join(', ') : 'as agreed'}.\n\nPlease arrange payment at your earliest convenience.\n\nKind regards,\n${user?.full_name || 'Your Name'}`;
-  }, [clientName, reference, reminders, user]);
+    return `Dear ${clientName || '[Client Name]'},\n\nThis is a friendly reminder regarding your invoice${reference ? ` (ref: ${reference})` : ''} for £${total.toLocaleString()}.\n\nPlease arrange payment at your earliest convenience.\n\nKind regards,\n${user?.full_name || 'Your Name'}`;
+  }, [clientName, reference, total, user]);
 
   const [emailBody, setEmailBody] = useState('');
   const displayEmail = emailBody || defaultReminder;
-
-  const total = useMemo(() => items.reduce((s, i) => s + (type === 'regular' ? i.qty * i.amount : i.hours * i.rate), 0), [items, type]);
 
   const addItem = () => setItems(p => [...p, { description: '', qty: 1, amount: 0, hours: 0, rate: 0 }]);
   const removeItem = (idx: number) => setItems(p => p.filter((_, i) => i !== idx));
@@ -237,7 +231,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                 </div>
                 <div className="text-right">
                   <h2 className="text-2xl font-bold text-foreground">INVOICE</h2>
-                  <p className="text-sm text-muted-foreground">New Invoice</p>
+                   <p className="text-sm text-muted-foreground">New Invoice</p>
                 </div>
               </div>
             </div>

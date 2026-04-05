@@ -49,12 +49,12 @@ export default function MyInvoicesPage() {
     else setSelected(new Set(filtered.map(i => i.id)));
   };
 
-  const handleDownload = (id: string) => {
-    addLog({ user_id: user?.id || 'usr_001', invoice_id: id, action_type: 'invoice_downloaded', description: `Invoice ${id} downloaded` });
+  const handleDownload = (inv: { id: string; invoice_number: string }) => {
+    addLog({ user_id: user?.id || '', invoice_id: inv.id, action_type: 'invoice_downloaded', description: `Invoice ${inv.invoice_number} downloaded` });
   };
 
   const handleBulkDownload = () => {
-    selected.forEach(id => handleDownload(id));
+    filtered.filter(i => selected.has(i.id)).forEach(inv => handleDownload(inv));
   };
 
   return (
@@ -113,7 +113,7 @@ export default function MyInvoicesPage() {
                 {filtered.map(inv => (
                   <tr key={inv.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3"><Checkbox checked={selected.has(inv.id)} onCheckedChange={() => toggleSelect(inv.id)} /></td>
-                    <td className="p-3 font-medium text-foreground">{inv.id}</td>
+                    <td className="p-3 font-medium text-foreground">{inv.invoice_number}</td>
                     <td className="p-3 text-foreground">{inv.client_name}</td>
                     <td className="p-3 text-muted-foreground">{inv.client_company}</td>
                     <td className="p-3 text-muted-foreground">{inv.client_email}</td>
@@ -127,7 +127,7 @@ export default function MyInvoicesPage() {
                             <Check className="h-3 w-3 mr-1" /> Paid
                           </Button>
                         )}
-                        <Button size="sm" variant="ghost" onClick={() => handleDownload(inv.id)} className="h-7 text-xs">
+                        <Button size="sm" variant="ghost" onClick={() => handleDownload(inv)} className="h-7 text-xs">
                           <Download className="h-3 w-3" />
                         </Button>
                         <Button size="sm" variant="ghost" className="h-7 text-xs">
