@@ -68,7 +68,7 @@ export default function ActivityLogsPage() {
               <tbody>
                 {filtered.map(log => (
                   <tr key={log.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="p-3 text-muted-foreground font-mono text-xs">{log.id}</td>
+                    <td className="p-3 text-muted-foreground font-mono text-xs">{log.log_number}</td>
                     <td className="p-3 text-foreground">{log.user_id}</td>
                     <td className="p-3">
                       <span className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
