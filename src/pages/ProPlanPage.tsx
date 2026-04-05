@@ -10,7 +10,7 @@ const freeFeatures = ['Up to 10 invoices/month', 'Basic reminders', 'Dashboard',
 const proFeatures = ['Unlimited invoices', 'Advanced dashboard', 'Automated reminder timeline', 'Editable email templates', 'Bulk invoice actions', 'Logo upload & branding'];
 
 export default function ProPlanPage() {
-  const { isProDemo, setProDemo, addLog, user } = useApp();
+  const { isProDemo, setProDemo, addLog } = useApp();
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [logoScale, setLogoScale] = useState([100]);
   const [logoX, setLogoX] = useState([50]);
@@ -26,11 +26,11 @@ export default function ProPlanPage() {
 
   const enterProDemo = () => {
     setProDemo(true);
-    addLog({ user_id: user?.id || 'usr_001', invoice_id: null, action_type: 'pro_demo_entered', description: 'User entered Pro plan demo mode' });
+    addLog({ action_type: 'pro_demo_entered', description: 'User entered Pro plan demo mode' });
   };
 
   const handleUpgradeClick = () => {
-    addLog({ user_id: user?.id || 'usr_001', invoice_id: null, action_type: 'upgrade_clicked', description: 'User clicked Upgrade to Pro' });
+    addLog({ action_type: 'upgrade_clicked', description: 'User clicked Upgrade to Pro' });
     enterProDemo();
   };
 
@@ -47,7 +47,6 @@ export default function ProPlanPage() {
           </Badge>
         </div>
 
-        {/* Upgrade CTA */}
         {!isProDemo && (
           <div className="gradient-hero rounded-xl p-8 mb-8 text-center">
             <Crown className="h-12 w-12 text-primary-foreground mx-auto mb-4 opacity-90" />
@@ -64,7 +63,6 @@ export default function ProPlanPage() {
           </div>
         )}
 
-        {/* Interactive Pro demos */}
         {isProDemo && (
           <div className="space-y-6 mb-8">
             <div className="grid md:grid-cols-3 gap-5">
@@ -105,7 +103,6 @@ export default function ProPlanPage() {
               </div>
             </div>
 
-            {/* Branding / Logo Upload */}
             <div className="bg-card rounded-xl p-6 shadow-card">
               <div className="flex items-center gap-2 mb-4">
                 <Palette className="h-5 w-5 text-primary" />
@@ -151,7 +148,6 @@ export default function ProPlanPage() {
                     </div>
                   )}
                 </div>
-                {/* Invoice Preview with branding */}
                 <div className="bg-surface rounded-lg p-6 border border-border relative overflow-hidden">
                   {logoPreview && (
                     <div
@@ -189,7 +185,6 @@ export default function ProPlanPage() {
           </div>
         )}
 
-        {/* Comparison */}
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="p-5 border-b border-border">
             <h2 className="font-semibold text-foreground">Free vs Pro Comparison</h2>
