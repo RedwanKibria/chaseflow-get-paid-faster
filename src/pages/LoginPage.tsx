@@ -7,15 +7,24 @@ import { Label } from '@/components/ui/label';
 import { Zap } from 'lucide-react';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('alex@chaseflow.io');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useApp();
   const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, password);
-    navigate('/dashboard');
+    setError('');
+    setSubmitting(true);
+    const err = await login(email, password);
+    setSubmitting(false);
+    if (err) {
+      setError(err);
+    } else {
+      navigate('/dashboard');
+    }
   };
 
   return (
@@ -30,6 +39,9 @@ export default function LoginPage() {
           <p className="text-muted-foreground mt-1">Log in to manage your invoices</p>
         </div>
         <form onSubmit={handleSubmit} className="bg-card rounded-xl p-8 shadow-card space-y-5">
+          {error && (
+            <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
+          )}
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
             <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} required />
@@ -38,7 +50,9 @@ export default function LoginPage() {
             <Label htmlFor="password">Password</Label>
             <Input id="password" type="password" value={password} onChange={e => setPassword(e.target.value)} required />
           </div>
-          <Button type="submit" className="w-full h-11">Log In</Button>
+          <Button type="submit" className="w-full h-11" disabled={submitting}>
+            {submitting ? 'Logging in…' : 'Log In'}
+          </Button>
           <p className="text-center text-sm text-muted-foreground">
             Don't have an account? <Link to="/signup" className="text-primary font-medium hover:underline">Sign up</Link>
           </p>
