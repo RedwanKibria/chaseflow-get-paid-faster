@@ -31,14 +31,8 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
   });
 
   const defaultReminder = useMemo(() => {
-    const parts: string[] = [];
-    if (reminders.before_3) parts.push('3 days before due date');
-    if (reminders.due) parts.push('on due date');
-    if (reminders.after_3) parts.push('3 days after');
-    if (reminders.after_7) parts.push('7 days after');
-    if (reminders.after_14) parts.push('14 days after');
-    return `Dear ${clientName || '[Client Name]'},\n\nThis is a friendly reminder regarding your invoice${reference ? ` (ref: ${reference})` : ''}. Payment is scheduled ${parts.length ? parts.join(', ') : 'as agreed'}.\n\nPlease arrange payment at your earliest convenience.\n\nKind regards,\n${user?.full_name || 'Your Name'}`;
-  }, [clientName, reference, reminders, user]);
+    return `Dear ${clientName || '[Client Name]'},\n\nThis is a friendly reminder regarding your invoice${reference ? ` (ref: ${reference})` : ''} for £${total.toLocaleString()}.\n\nPlease arrange payment at your earliest convenience.\n\nKind regards,\n${user?.full_name || 'Your Name'}`;
+  }, [clientName, reference, total, user]);
 
   const [emailBody, setEmailBody] = useState('');
   const displayEmail = emailBody || defaultReminder;
@@ -237,7 +231,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                 </div>
                 <div className="text-right">
                   <h2 className="text-2xl font-bold text-foreground">INVOICE</h2>
-                  <p className="text-sm text-muted-foreground">New Invoice</p>
+                   <p className="text-sm text-muted-foreground">New Invoice</p>
                 </div>
               </div>
             </div>
