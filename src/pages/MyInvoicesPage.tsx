@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Check, Download, Search, Pencil } from 'lucide-react';
+import { Check, Download, Search, XCircle, Trash2, CheckCircle2, X } from 'lucide-react';
 
 const statusBadge = (status: string) => {
   const map: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
@@ -13,28 +13,35 @@ const statusBadge = (status: string) => {
     pending: { variant: 'secondary', label: 'Pending' },
     due_soon: { variant: 'outline', label: 'Due Soon' },
     overdue: { variant: 'destructive', label: 'Overdue' },
+    cancelled: { variant: 'secondary', label: 'Cancelled' },
   };
   const s = map[status] || map.pending;
   return <Badge variant={s.variant}>{s.label}</Badge>;
 };
 
+const SentIcon = ({ sent }: { sent: boolean }) =>
+  sent ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <X className="h-4 w-4 text-muted-foreground/40" />;
+
 export default function MyInvoicesPage() {
-  const { invoices, markAsPaid, addLog, user } = useApp();
+  const { invoices, markAsPaid, cancelInvoice, softDeleteInvoice, addLog } = useApp();
   const [filterName, setFilterName] = useState('');
   const [filterCompany, setFilterCompany] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
+  const [filterStatus, setFilterStatus] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
 
   const filtered = useMemo(() => {
     return invoices.filter(inv => {
+      if (inv.is_deleted) return false;
       if (filterName && !inv.client_name.toLowerCase().includes(filterName.toLowerCase())) return false;
       if (filterCompany && !inv.client_company.toLowerCase().includes(filterCompany.toLowerCase())) return false;
       if (filterDateFrom && inv.due_date < filterDateFrom) return false;
       if (filterDateTo && inv.due_date > filterDateTo) return false;
+      if (filterStatus && inv.status !== filterStatus) return false;
       return true;
     });
-  }, [invoices, filterName, filterCompany, filterDateFrom, filterDateTo]);
+  }, [invoices, filterName, filterCompany, filterDateFrom, filterDateTo, filterStatus]);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
@@ -49,8 +56,8 @@ export default function MyInvoicesPage() {
     else setSelected(new Set(filtered.map(i => i.id)));
   };
 
-  const handleDownload = (inv: { id: string; invoice_number: string }) => {
-    addLog({ user_id: user?.id || '', invoice_id: inv.id, action_type: 'invoice_downloaded', description: `Invoice ${inv.invoice_number} downloaded` });
+  const handleDownload = (inv: { id: string; invoice_code: string }) => {
+    addLog({ invoice_id: inv.id, action_type: 'invoice_downloaded', description: `Invoice ${inv.invoice_code} downloaded` });
   };
 
   const handleBulkDownload = () => {
@@ -82,6 +89,18 @@ export default function MyInvoicesPage() {
             <div className="flex-1 min-w-[180px]">
               <Input placeholder="Filter by company" value={filterCompany} onChange={e => setFilterCompany(e.target.value)} />
             </div>
+            <select
+              value={filterStatus}
+              onChange={e => setFilterStatus(e.target.value)}
+              className="h-10 rounded-md border border-input bg-background px-3 text-sm text-foreground"
+            >
+              <option value="">All Statuses</option>
+              <option value="pending">Pending</option>
+              <option value="due_soon">Due Soon</option>
+              <option value="overdue">Overdue</option>
+              <option value="paid">Paid</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
             <div className="flex items-center gap-2">
               <Input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="w-40" />
               <span className="text-muted-foreground text-sm">to</span>
@@ -106,6 +125,11 @@ export default function MyInvoicesPage() {
                   <th className="text-right p-3 font-medium text-muted-foreground">Amount</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Due Date</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Status</th>
+                  <th className="text-center p-3 font-medium text-muted-foreground" title="3 days before">-3d</th>
+                  <th className="text-center p-3 font-medium text-muted-foreground" title="On due date">Due</th>
+                  <th className="text-center p-3 font-medium text-muted-foreground" title="3 days after">+3d</th>
+                  <th className="text-center p-3 font-medium text-muted-foreground" title="7 days after">+7d</th>
+                  <th className="text-center p-3 font-medium text-muted-foreground" title="14 days after">+14d</th>
                   <th className="text-right p-3 font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
@@ -113,25 +137,35 @@ export default function MyInvoicesPage() {
                 {filtered.map(inv => (
                   <tr key={inv.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3"><Checkbox checked={selected.has(inv.id)} onCheckedChange={() => toggleSelect(inv.id)} /></td>
-                    <td className="p-3 font-medium text-foreground">{inv.invoice_number}</td>
+                    <td className="p-3 font-medium text-foreground">{inv.invoice_code}</td>
                     <td className="p-3 text-foreground">{inv.client_name}</td>
                     <td className="p-3 text-muted-foreground">{inv.client_company}</td>
                     <td className="p-3 text-muted-foreground">{inv.client_email}</td>
                     <td className="p-3 text-right font-medium text-foreground">£{inv.total_amount.toLocaleString()}</td>
                     <td className="p-3 text-muted-foreground">{inv.due_date}</td>
                     <td className="p-3">{statusBadge(inv.status)}</td>
+                    <td className="p-3 text-center"><SentIcon sent={inv.before_3_sent} /></td>
+                    <td className="p-3 text-center"><SentIcon sent={inv.due_sent} /></td>
+                    <td className="p-3 text-center"><SentIcon sent={inv.after_3_sent} /></td>
+                    <td className="p-3 text-center"><SentIcon sent={inv.after_7_sent} /></td>
+                    <td className="p-3 text-center"><SentIcon sent={inv.after_14_sent} /></td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {!inv.paid && (
+                        {!inv.paid && inv.status !== 'cancelled' && (
                           <Button size="sm" variant="outline" onClick={() => markAsPaid(inv.id)} className="h-7 text-xs">
                             <Check className="h-3 w-3 mr-1" /> Paid
+                          </Button>
+                        )}
+                        {inv.status !== 'paid' && inv.status !== 'cancelled' && (
+                          <Button size="sm" variant="ghost" onClick={() => cancelInvoice(inv.id)} className="h-7 text-xs text-destructive">
+                            <XCircle className="h-3 w-3" />
                           </Button>
                         )}
                         <Button size="sm" variant="ghost" onClick={() => handleDownload(inv)} className="h-7 text-xs">
                           <Download className="h-3 w-3" />
                         </Button>
-                        <Button size="sm" variant="ghost" className="h-7 text-xs">
-                          <Pencil className="h-3 w-3" />
+                        <Button size="sm" variant="ghost" onClick={() => softDeleteInvoice(inv.id)} className="h-7 text-xs text-destructive">
+                          <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
                     </td>

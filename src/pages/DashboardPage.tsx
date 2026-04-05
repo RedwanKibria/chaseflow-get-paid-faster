@@ -1,7 +1,7 @@
 import { useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import { FileText, AlertTriangle, Clock, DollarSign, Check, Download } from 'lucide-react';
+import { FileText, AlertTriangle, Clock, DollarSign, Check, Download, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 
@@ -11,21 +11,24 @@ const statusBadge = (status: string) => {
     pending: { variant: 'secondary', label: 'Pending' },
     due_soon: { variant: 'outline', label: 'Due Soon' },
     overdue: { variant: 'destructive', label: 'Overdue' },
+    cancelled: { variant: 'secondary', label: 'Cancelled' },
   };
   const s = map[status] || map.pending;
   return <Badge variant={s.variant}>{s.label}</Badge>;
 };
 
 export default function DashboardPage() {
-  const { invoices, markAsPaid, addLog, user } = useApp();
+  const { invoices, markAsPaid, cancelInvoice, addLog } = useApp();
+
+  const activeInvoices = useMemo(() => invoices.filter(i => !i.is_deleted), [invoices]);
 
   const stats = useMemo(() => {
-    const total = invoices.length;
-    const overdue = invoices.filter(i => i.status === 'overdue').length;
-    const dueSoon = invoices.filter(i => i.status === 'due_soon').length;
-    const outstanding = invoices.filter(i => !i.paid).reduce((s, i) => s + i.total_amount, 0);
+    const total = activeInvoices.length;
+    const overdue = activeInvoices.filter(i => i.status === 'overdue').length;
+    const dueSoon = activeInvoices.filter(i => i.status === 'due_soon').length;
+    const outstanding = activeInvoices.filter(i => i.status !== 'paid' && i.status !== 'cancelled').reduce((s, i) => s + i.total_amount, 0);
     return { total, overdue, dueSoon, outstanding };
-  }, [invoices]);
+  }, [activeInvoices]);
 
   const kpis = [
     { label: 'Total Invoices', value: stats.total, icon: FileText, color: 'text-primary' },
@@ -34,8 +37,8 @@ export default function DashboardPage() {
     { label: 'Outstanding', value: `£${stats.outstanding.toLocaleString()}`, icon: DollarSign, color: 'text-success' },
   ];
 
-  const handleDownload = (inv: { id: string; invoice_number: string }) => {
-    addLog({ user_id: user?.id || '', invoice_id: inv.id, action_type: 'invoice_downloaded', description: `Invoice ${inv.invoice_number} downloaded` });
+  const handleDownload = (inv: { id: string; invoice_code: string }) => {
+    addLog({ invoice_id: inv.id, action_type: 'invoice_downloaded', description: `Invoice ${inv.invoice_code} downloaded` });
   };
 
   return (
@@ -74,9 +77,9 @@ export default function DashboardPage() {
                 </tr>
               </thead>
               <tbody>
-                {invoices.slice(0, 10).map(inv => (
+                {activeInvoices.slice(0, 10).map(inv => (
                   <tr key={inv.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="p-3 font-medium text-foreground">{inv.invoice_number}</td>
+                    <td className="p-3 font-medium text-foreground">{inv.invoice_code}</td>
                     <td className="p-3 text-foreground">{inv.client_name}</td>
                     <td className="p-3 text-muted-foreground">{inv.client_company}</td>
                     <td className="p-3 text-right font-medium text-foreground">£{inv.total_amount.toLocaleString()}</td>
@@ -84,9 +87,14 @@ export default function DashboardPage() {
                     <td className="p-3">{statusBadge(inv.status)}</td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-2">
-                        {!inv.paid && (
+                        {!inv.paid && inv.status !== 'cancelled' && (
                           <Button size="sm" variant="outline" onClick={() => markAsPaid(inv.id)} className="h-8 text-xs">
                             <Check className="h-3 w-3 mr-1" /> Paid
+                          </Button>
+                        )}
+                        {inv.status !== 'paid' && inv.status !== 'cancelled' && (
+                          <Button size="sm" variant="ghost" onClick={() => cancelInvoice(inv.id)} className="h-8 text-xs text-destructive">
+                            <XCircle className="h-3 w-3 mr-1" /> Cancel
                           </Button>
                         )}
                         <Button size="sm" variant="ghost" onClick={() => handleDownload(inv)} className="h-8 text-xs">

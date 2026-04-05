@@ -17,8 +17,12 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientCompany, setClientCompany] = useState('');
+  const [yourCompanyName, setYourCompanyName] = useState('');
   const [dueDate, setDueDate] = useState('');
   const [reference, setReference] = useState('');
+  const [vatPercent, setVatPercent] = useState(0);
+  const [taxPercent, setTaxPercent] = useState(0);
+  const [reminderSubject, setReminderSubject] = useState('');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -30,7 +34,10 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
     before_3: true, due: true, after_3: false, after_7: false, after_14: false,
   });
 
-  const total = useMemo(() => items.reduce((s, i) => s + (type === 'regular' ? i.qty * i.amount : i.hours * i.rate), 0), [items, type]);
+  const subtotal = useMemo(() => items.reduce((s, i) => s + (type === 'regular' ? i.qty * i.amount : i.hours * i.rate), 0), [items, type]);
+  const vatAmount = useMemo(() => Math.round(subtotal * vatPercent) / 100, [subtotal, vatPercent]);
+  const taxAmount = useMemo(() => Math.round(subtotal * taxPercent) / 100, [subtotal, taxPercent]);
+  const total = subtotal + vatAmount + taxAmount;
 
   const defaultReminder = useMemo(() => {
     return `Dear ${clientName || '[Client Name]'},\n\nThis is a friendly reminder regarding your invoice${reference ? ` (ref: ${reference})` : ''} for £${total.toLocaleString()}.\n\nPlease arrange payment at your earliest convenience.\n\nKind regards,\n${user?.full_name || 'Your Name'}`;
@@ -64,13 +71,15 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
       client_name: clientName,
       client_email: clientEmail,
       client_company: clientCompany,
+      your_company_name: yourCompanyName || null,
       invoice_reference: reference,
       invoice_date: new Date().toISOString().split('T')[0],
       due_date: dueDate,
-      total_amount: total,
+      vat_percent: vatPercent,
+      tax_percent: taxPercent,
       paid: false,
-      paid_date: null,
-      reminder_email_body: displayEmail,
+      reminder_email_subject: reminderSubject || null,
+      email_body: displayEmail || null,
       reminder_before_3: reminders.before_3,
       reminder_due: reminders.due,
       reminder_after_3: reminders.after_3,
@@ -83,7 +92,8 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
-    setClientName(''); setClientEmail(''); setClientCompany(''); setDueDate(''); setReference('');
+    setClientName(''); setClientEmail(''); setClientCompany(''); setYourCompanyName('');
+    setDueDate(''); setReference(''); setVatPercent(0); setTaxPercent(0); setReminderSubject('');
     setItems([{ description: '', qty: 1, amount: 0, hours: 0, rate: 0 }]);
     setEmailBody('');
   };
@@ -125,13 +135,29 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                   <Input value={clientCompany} onChange={e => setClientCompany(e.target.value)} placeholder="Acme Ltd" />
                 </div>
                 <div className="space-y-1.5">
+                  <Label>Your Company Name (optional)</Label>
+                  <Input value={yourCompanyName} onChange={e => setYourCompanyName(e.target.value)} placeholder="Your Business Ltd" />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
                   <Label>Due Date</Label>
                   <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
                 </div>
+                <div className="space-y-1.5">
+                  <Label>Invoice Reference (optional)</Label>
+                  <Input value={reference} onChange={e => setReference(e.target.value)} placeholder="PO-12345" />
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label>Invoice Reference (optional)</Label>
-                <Input value={reference} onChange={e => setReference(e.target.value)} placeholder="PO-12345" />
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <Label>VAT % (optional)</Label>
+                  <Input type="number" min={0} max={100} value={vatPercent || ''} onChange={e => setVatPercent(+e.target.value)} placeholder="0" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>TAX % (optional)</Label>
+                  <Input type="number" min={0} max={100} value={taxPercent || ''} onChange={e => setTaxPercent(+e.target.value)} placeholder="0" />
+                </div>
               </div>
             </div>
 
@@ -177,9 +203,24 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                   </div>
                 ))}
               </div>
-              <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-                <Button variant="outline" size="sm" onClick={addItem}><Plus className="h-3 w-3 mr-1" /> Add Item</Button>
-                <span className="text-lg font-bold text-foreground">Total: £{total.toLocaleString()}</span>
+              <div className="mt-4 pt-4 border-t border-border space-y-1">
+                <div className="flex items-center justify-between">
+                  <Button variant="outline" size="sm" onClick={addItem}><Plus className="h-3 w-3 mr-1" /> Add Item</Button>
+                  <span className="text-sm text-muted-foreground">Subtotal: £{subtotal.toLocaleString()}</span>
+                </div>
+                {vatPercent > 0 && (
+                  <div className="flex justify-end text-sm text-muted-foreground">
+                    VAT ({vatPercent}%): £{vatAmount.toLocaleString()}
+                  </div>
+                )}
+                {taxPercent > 0 && (
+                  <div className="flex justify-end text-sm text-muted-foreground">
+                    TAX ({taxPercent}%): £{taxAmount.toLocaleString()}
+                  </div>
+                )}
+                <div className="flex justify-end">
+                  <span className="text-lg font-bold text-foreground">Total: £{total.toLocaleString()}</span>
+                </div>
               </div>
             </div>
 
@@ -205,13 +246,21 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
             </div>
 
             <div className="bg-card rounded-xl p-6 shadow-card space-y-3">
-              <h3 className="font-semibold text-foreground">Email Reminder Preview</h3>
-              <Textarea
-                rows={8}
-                value={displayEmail}
-                onChange={e => setEmailBody(e.target.value)}
-                className="text-sm"
-              />
+              <h3 className="font-semibold text-foreground">Email Reminder</h3>
+              <div className="space-y-1.5">
+                <Label>Subject</Label>
+                <Input value={reminderSubject} onChange={e => setReminderSubject(e.target.value)} placeholder="Payment Reminder — Invoice" />
+              </div>
+              <div className="space-y-1.5">
+                <Label>Email Body</Label>
+                <Textarea
+                  rows={8}
+                  value={displayEmail}
+                  onChange={e => setEmailBody(e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+              <p className="text-sm font-bold text-foreground">Please add your Bank/Online transfer details in the mail</p>
             </div>
 
             <Button onClick={handleSave} className="w-full h-11" disabled={!clientName || !dueDate || saving}>
@@ -227,11 +276,11 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
                     <span className="text-primary font-bold text-lg">C</span>
                   </div>
-                  <p className="text-sm text-muted-foreground">Your Business Name</p>
+                  <p className="text-sm text-muted-foreground">{yourCompanyName || 'Your Business Name'}</p>
                 </div>
                 <div className="text-right">
                   <h2 className="text-2xl font-bold text-foreground">INVOICE</h2>
-                   <p className="text-sm text-muted-foreground">New Invoice</p>
+                  <p className="text-sm text-muted-foreground">New Invoice</p>
                 </div>
               </div>
             </div>
@@ -276,8 +325,14 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               </tbody>
             </table>
             <div className="flex justify-end">
-              <div className="text-right">
-                <p className="text-sm text-muted-foreground">Total Amount</p>
+              <div className="text-right space-y-1">
+                <p className="text-sm text-muted-foreground">Subtotal: <span className="text-foreground font-medium">£{subtotal.toLocaleString()}</span></p>
+                {vatPercent > 0 && (
+                  <p className="text-sm text-muted-foreground">VAT ({vatPercent}%): <span className="text-foreground font-medium">£{vatAmount.toLocaleString()}</span></p>
+                )}
+                {taxPercent > 0 && (
+                  <p className="text-sm text-muted-foreground">TAX ({taxPercent}%): <span className="text-foreground font-medium">£{taxAmount.toLocaleString()}</span></p>
+                )}
                 <p className="text-3xl font-bold text-foreground">£{total.toLocaleString()}</p>
               </div>
             </div>
