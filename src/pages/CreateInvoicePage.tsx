@@ -30,14 +30,14 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
     before_3: true, due: true, after_3: false, after_7: false, after_14: false,
   });
 
+  const total = useMemo(() => items.reduce((s, i) => s + (type === 'regular' ? i.qty * i.amount : i.hours * i.rate), 0), [items, type]);
+
   const defaultReminder = useMemo(() => {
     return `Dear ${clientName || '[Client Name]'},\n\nThis is a friendly reminder regarding your invoice${reference ? ` (ref: ${reference})` : ''} for £${total.toLocaleString()}.\n\nPlease arrange payment at your earliest convenience.\n\nKind regards,\n${user?.full_name || 'Your Name'}`;
   }, [clientName, reference, total, user]);
 
   const [emailBody, setEmailBody] = useState('');
   const displayEmail = emailBody || defaultReminder;
-
-  const total = useMemo(() => items.reduce((s, i) => s + (type === 'regular' ? i.qty * i.amount : i.hours * i.rate), 0), [items, type]);
 
   const addItem = () => setItems(p => [...p, { description: '', qty: 1, amount: 0, hours: 0, rate: 0 }]);
   const removeItem = (idx: number) => setItems(p => p.filter((_, i) => i !== idx));
