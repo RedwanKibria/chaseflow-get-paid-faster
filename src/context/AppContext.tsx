@@ -13,10 +13,10 @@ interface AppContextType {
   login: (email: string, password: string) => Promise<string | null>;
   signup: (name: string, email: string, password: string) => Promise<string | null>;
   logout: () => void;
-  addInvoice: (inv: Omit<Invoice, 'id' | 'user_id' | 'created_at' | 'status'>) => Promise<void>;
+  addInvoice: (inv: Omit<Invoice, 'id' | 'user_id' | 'created_at' | 'status' | 'invoice_number'>) => Promise<void>;
   updateInvoice: (inv: Invoice) => Promise<void>;
   markAsPaid: (id: string) => Promise<void>;
-  addLog: (log: Omit<ActivityLog, 'id' | 'created_at'>) => void;
+  addLog: (log: Omit<ActivityLog, 'id' | 'created_at' | 'log_number'>) => void;
   setProDemo: (v: boolean) => void;
   updateUser: (u: Partial<User>) => void;
   refreshInvoices: () => Promise<void>;
@@ -107,6 +107,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const mapped: Invoice[] = invRows.map(r => ({
       id: r.id,
       user_id: r.user_id,
+      invoice_number: (r as any).invoice_number ?? r.id,
       invoice_type: r.invoice_type as 'regular' | 'hourly',
       client_name: r.client_name,
       client_email: r.client_email ?? '',
@@ -151,7 +152,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .limit(200);
 
     if (data) {
-      setActivityLogs(data as ActivityLog[]);
+      setActivityLogs(data.map((d: any) => ({ ...d, log_number: d.log_number ?? d.id })) as ActivityLog[]);
     }
   }, [session]);
 
@@ -173,7 +174,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     supabase.auth.signOut();
   }, []);
 
-  const addLog = useCallback(async (log: Omit<ActivityLog, 'id' | 'created_at'>) => {
+  const addLog = useCallback(async (log: Omit<ActivityLog, 'id' | 'created_at' | 'log_number'>) => {
     await supabase.from('activity_logs').insert({
       user_id: log.user_id,
       invoice_id: log.invoice_id,
@@ -183,7 +184,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     refreshLogs();
   }, [refreshLogs]);
 
-  const addInvoice = useCallback(async (inv: Omit<Invoice, 'id' | 'user_id' | 'created_at' | 'status'>) => {
+  const addInvoice = useCallback(async (inv: Omit<Invoice, 'id' | 'user_id' | 'created_at' | 'status' | 'invoice_number'>) => {
     if (!session?.user) return;
     const { data: inserted, error } = await supabase
       .from('invoices')
