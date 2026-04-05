@@ -21,6 +21,7 @@ export interface InvoiceItem {
 export interface Invoice {
   id: string;
   user_id: string;
+  invoice_number: string;
   invoice_type: 'regular' | 'hourly';
   client_name: string;
   client_email: string;
@@ -45,6 +46,7 @@ export interface Invoice {
 
 export interface ActivityLog {
   id: string;
+  log_number: string;
   user_id: string;
   invoice_id: string | null;
   action_type: string;
