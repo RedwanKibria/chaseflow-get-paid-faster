@@ -17,38 +17,92 @@ export type Database = {
       activity_logs: {
         Row: {
           action_type: string
+          actor_user_id: string | null
           created_at: string
           description: string
           id: string
           invoice_id: string | null
+          log_code: string | null
           log_number: string | null
+          meta: Json | null
+          related_user_id: string | null
           user_id: string
         }
         Insert: {
           action_type: string
+          actor_user_id?: string | null
           created_at?: string
           description: string
           id?: string
           invoice_id?: string | null
+          log_code?: string | null
           log_number?: string | null
+          meta?: Json | null
+          related_user_id?: string | null
           user_id: string
         }
         Update: {
           action_type?: string
+          actor_user_id?: string | null
           created_at?: string
           description?: string
           id?: string
           invoice_id?: string | null
+          log_code?: string | null
           log_number?: string | null
+          meta?: Json | null
+          related_user_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "activity_logs_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["owner_user_id"]
+          },
+          {
+            foreignKeyName: "activity_logs_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
+            referencedRelation: "users_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_logs_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "activity_logs_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
             referencedRelation: "invoices"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_logs_related_user_id_fkey"
+            columns: ["related_user_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["owner_user_id"]
+          },
+          {
+            foreignKeyName: "activity_logs_related_user_id_fkey"
+            columns: ["related_user_id"]
+            isOneToOne: false
+            referencedRelation: "users_profile"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["owner_user_id"]
           },
           {
             foreignKeyName: "activity_logs_user_id_fkey"
@@ -101,6 +155,13 @@ export type Database = {
             foreignKeyName: "invoice_items_invoice_id_fkey"
             columns: ["invoice_id"]
             isOneToOne: false
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "invoice_items_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
             referencedRelation: "invoices"
             referencedColumns: ["id"]
           },
@@ -108,16 +169,33 @@ export type Database = {
       }
       invoices: {
         Row: {
+          after_14_sent: boolean | null
+          after_14_sent_at: string | null
+          after_3_sent: boolean | null
+          after_3_sent_at: string | null
+          after_7_sent: boolean | null
+          after_7_sent_at: string | null
+          before_3_sent: boolean | null
+          before_3_sent_at: string | null
+          cancelled_at: string | null
           client_company: string | null
           client_email: string | null
           client_name: string
           created_at: string
+          deleted_at: string | null
           due_date: string
+          due_sent: boolean | null
+          due_sent_at: string | null
+          email_body: string | null
           id: string
+          invoice_code: string | null
           invoice_date: string
+          invoice_file_name: string | null
+          invoice_file_path: string | null
           invoice_number: string | null
           invoice_reference: string | null
           invoice_type: string
+          is_deleted: boolean | null
           logo_url: string | null
           paid: boolean
           paid_date: string | null
@@ -127,22 +205,46 @@ export type Database = {
           reminder_before_3: boolean
           reminder_due: boolean
           reminder_email_body: string | null
+          reminder_email_subject: string | null
           status: string
+          subtotal_amount: number | null
+          tax_amount: number | null
+          tax_percent: number | null
           total_amount: number
           updated_at: string
           user_id: string
+          vat_amount: number | null
+          vat_percent: number | null
+          your_company_name: string | null
         }
         Insert: {
+          after_14_sent?: boolean | null
+          after_14_sent_at?: string | null
+          after_3_sent?: boolean | null
+          after_3_sent_at?: string | null
+          after_7_sent?: boolean | null
+          after_7_sent_at?: string | null
+          before_3_sent?: boolean | null
+          before_3_sent_at?: string | null
+          cancelled_at?: string | null
           client_company?: string | null
           client_email?: string | null
           client_name: string
           created_at?: string
+          deleted_at?: string | null
           due_date: string
+          due_sent?: boolean | null
+          due_sent_at?: string | null
+          email_body?: string | null
           id?: string
+          invoice_code?: string | null
           invoice_date?: string
+          invoice_file_name?: string | null
+          invoice_file_path?: string | null
           invoice_number?: string | null
           invoice_reference?: string | null
           invoice_type: string
+          is_deleted?: boolean | null
           logo_url?: string | null
           paid?: boolean
           paid_date?: string | null
@@ -152,22 +254,46 @@ export type Database = {
           reminder_before_3?: boolean
           reminder_due?: boolean
           reminder_email_body?: string | null
+          reminder_email_subject?: string | null
           status?: string
+          subtotal_amount?: number | null
+          tax_amount?: number | null
+          tax_percent?: number | null
           total_amount?: number
           updated_at?: string
           user_id: string
+          vat_amount?: number | null
+          vat_percent?: number | null
+          your_company_name?: string | null
         }
         Update: {
+          after_14_sent?: boolean | null
+          after_14_sent_at?: string | null
+          after_3_sent?: boolean | null
+          after_3_sent_at?: string | null
+          after_7_sent?: boolean | null
+          after_7_sent_at?: string | null
+          before_3_sent?: boolean | null
+          before_3_sent_at?: string | null
+          cancelled_at?: string | null
           client_company?: string | null
           client_email?: string | null
           client_name?: string
           created_at?: string
+          deleted_at?: string | null
           due_date?: string
+          due_sent?: boolean | null
+          due_sent_at?: string | null
+          email_body?: string | null
           id?: string
+          invoice_code?: string | null
           invoice_date?: string
+          invoice_file_name?: string | null
+          invoice_file_path?: string | null
           invoice_number?: string | null
           invoice_reference?: string | null
           invoice_type?: string
+          is_deleted?: boolean | null
           logo_url?: string | null
           paid?: boolean
           paid_date?: string | null
@@ -177,12 +303,26 @@ export type Database = {
           reminder_before_3?: boolean
           reminder_due?: boolean
           reminder_email_body?: string | null
+          reminder_email_subject?: string | null
           status?: string
+          subtotal_amount?: number | null
+          tax_amount?: number | null
+          tax_percent?: number | null
           total_amount?: number
           updated_at?: string
           user_id?: string
+          vat_amount?: number | null
+          vat_percent?: number | null
+          your_company_name?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "invoices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["owner_user_id"]
+          },
           {
             foreignKeyName: "invoices_user_id_fkey"
             columns: ["user_id"]
@@ -221,6 +361,13 @@ export type Database = {
           status?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "reminder_jobs_invoice_id_fkey"
+            columns: ["invoice_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "reminder_jobs_invoice_id_fkey"
             columns: ["invoice_id"]
@@ -269,6 +416,112 @@ export type Database = {
             foreignKeyName: "subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["owner_user_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_access: {
+        Row: {
+          created_at: string
+          is_active: boolean
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          is_active?: boolean
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          is_active?: boolean
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["owner_user_id"]
+          },
+          {
+            foreignKeyName: "user_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_page_permissions: {
+        Row: {
+          activity_logs: boolean
+          admin_invoice_reports: boolean
+          admin_system_logs: boolean
+          admin_user_management: boolean
+          create_invoice: boolean
+          created_at: string
+          dashboard: boolean
+          my_invoices: boolean
+          pro_plan: boolean
+          settings: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          activity_logs?: boolean
+          admin_invoice_reports?: boolean
+          admin_system_logs?: boolean
+          admin_user_management?: boolean
+          create_invoice?: boolean
+          created_at?: string
+          dashboard?: boolean
+          my_invoices?: boolean
+          pro_plan?: boolean
+          settings?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          activity_logs?: boolean
+          admin_invoice_reports?: boolean
+          admin_system_logs?: boolean
+          admin_user_management?: boolean
+          create_invoice?: boolean
+          created_at?: string
+          dashboard?: boolean
+          my_invoices?: boolean
+          pro_plan?: boolean
+          settings?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_page_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["owner_user_id"]
+          },
+          {
+            foreignKeyName: "user_page_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "users_profile"
             referencedColumns: ["id"]
           },
@@ -276,48 +529,131 @@ export type Database = {
       }
       users_profile: {
         Row: {
+          company_name: string | null
           created_at: string
           email: string | null
           full_name: string | null
           id: string
           plan: string
+          updated_at: string | null
         }
         Insert: {
+          company_name?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id: string
           plan?: string
+          updated_at?: string | null
         }
         Update: {
+          company_name?: string | null
           created_at?: string
           email?: string | null
           full_name?: string | null
           id?: string
           plan?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
     }
     Views: {
-      [_ in never]: never
+      invoice_reports_view: {
+        Row: {
+          after_14_sent: boolean | null
+          after_3_sent: boolean | null
+          after_7_sent: boolean | null
+          before_3_sent: boolean | null
+          cancelled_at: string | null
+          client_company: string | null
+          client_email: string | null
+          client_name: string | null
+          created_at: string | null
+          deleted_at: string | null
+          due_date: string | null
+          due_sent: boolean | null
+          id: string | null
+          invoice_code: string | null
+          invoice_date: string | null
+          invoice_reference: string | null
+          invoice_type: string | null
+          is_deleted: boolean | null
+          owner_email: string | null
+          owner_full_name: string | null
+          owner_is_active: boolean | null
+          owner_role: string | null
+          owner_user_id: string | null
+          paid: boolean | null
+          paid_date: string | null
+          status: string | null
+          subtotal_amount: number | null
+          tax_amount: number | null
+          tax_percent: number | null
+          total_amount: number | null
+          vat_amount: number | null
+          vat_percent: number | null
+          your_company_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      add_activity_log: {
+      add_activity_log:
+        | {
+            Args: {
+              p_action_type: string
+              p_actor_user_id: string
+              p_description: string
+              p_invoice_id?: string
+              p_meta?: Json
+              p_related_user_id?: string
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_action_type: string
+              p_description: string
+              p_invoice_id?: string
+              p_user_id: string
+            }
+            Returns: undefined
+          }
+      admin_set_user_active: {
+        Args: { p_is_active: boolean; p_user_id: string }
+        Returns: undefined
+      }
+      admin_set_user_permission: {
         Args: {
-          p_action_type: string
-          p_description: string
-          p_invoice_id?: string
+          p_enabled: boolean
+          p_permission_key: string
           p_user_id: string
         }
         Returns: undefined
       }
+      cancel_invoice: { Args: { p_invoice_id: string }; Returns: undefined }
       create_reminder_jobs_for_invoice: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
+      }
+      is_active_user: { Args: never; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
+      mark_invoice_paid: { Args: { p_invoice_id: string }; Returns: undefined }
+      refresh_invoice_financials: {
         Args: { p_invoice_id: string }
         Returns: undefined
       }
       refresh_invoice_total: {
         Args: { p_invoice_id: string }
+        Returns: undefined
+      }
+      soft_delete_invoice: {
+        Args: { p_invoice_id: string }
+        Returns: undefined
+      }
+      update_my_profile: {
+        Args: { p_company_name: string; p_full_name: string }
         Returns: undefined
       }
     }
