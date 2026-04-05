@@ -10,11 +10,11 @@ import { Badge } from '@/components/ui/badge';
 export default function SettingsPage() {
   const { user, updateUser } = useApp();
   const [name, setName] = useState(user?.full_name || '');
-  const [email, setEmail] = useState(user?.email || '');
+  const [companyName, setCompanyName] = useState(user?.company_name || '');
   const [saved, setSaved] = useState(false);
 
   const handleSave = () => {
-    updateUser({ full_name: name, email });
+    updateUser({ full_name: name, company_name: companyName });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
@@ -32,7 +32,6 @@ export default function SettingsPage() {
         )}
 
         <div className="space-y-6">
-          {/* Profile */}
           <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
             <h3 className="font-semibold text-foreground">Profile</h3>
             <div className="grid grid-cols-2 gap-4">
@@ -41,14 +40,18 @@ export default function SettingsPage() {
                 <Input value={name} onChange={e => setName(e.target.value)} />
               </div>
               <div className="space-y-1.5">
-                <Label>Email</Label>
-                <Input type="email" value={email} onChange={e => setEmail(e.target.value)} />
+                <Label>Company Name</Label>
+                <Input value={companyName} onChange={e => setCompanyName(e.target.value)} placeholder="Your Company Ltd" />
               </div>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Email</Label>
+              <Input type="email" value={user?.email || ''} disabled className="bg-muted" />
+              <p className="text-xs text-muted-foreground">Email cannot be changed here.</p>
             </div>
             <Button onClick={handleSave}>Save Changes</Button>
           </div>
 
-          {/* Reminder Preferences */}
           <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
             <h3 className="font-semibold text-foreground">Default Reminder Preferences</h3>
             <div className="space-y-3">
@@ -61,28 +64,12 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          {/* Email */}
-          <div className="bg-card rounded-xl p-6 shadow-card space-y-3">
-            <h3 className="font-semibold text-foreground">Email Preferences</h3>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox defaultChecked /> Send email notifications for overdue invoices
-            </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox defaultChecked /> Weekly summary email
-            </label>
-            <label className="flex items-center gap-2 text-sm cursor-pointer">
-              <Checkbox /> Marketing emails
-            </label>
-          </div>
-
-          {/* Plan */}
           <div className="bg-card rounded-xl p-6 shadow-card space-y-3">
             <h3 className="font-semibold text-foreground">Plan & Billing</h3>
             <div className="flex items-center gap-3">
               <span className="text-sm text-muted-foreground">Current Plan:</span>
               <Badge variant="secondary">{user?.plan === 'pro' ? 'Pro' : 'Free'}</Badge>
             </div>
-            <p className="text-sm text-muted-foreground">Billing details and payment methods will be available once connected to a backend.</p>
           </div>
         </div>
       </div>

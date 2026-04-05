@@ -1,20 +1,29 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, Clock, FileText, Activity, Crown, Settings, LogOut, Zap } from 'lucide-react';
+import { LayoutDashboard, FilePlus, Clock, FileText, Activity, Crown, Settings, LogOut, Zap, Users, ScrollText, BarChart3 } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
-
-const navItems = [
-  { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { to: '/create-invoice', label: 'Invoice — Regular', icon: FilePlus },
-  { to: '/create-invoice-hourly', label: 'Invoice — Hourly', icon: Clock },
-  { to: '/invoices', label: 'My Invoices', icon: FileText },
-  { to: '/activity', label: 'Activity Logs', icon: Activity },
-  { to: '/pro', label: 'Pro Plan', icon: Crown },
-  { to: '/settings', label: 'Settings', icon: Settings },
-];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
-  const { user, logout } = useApp();
+  const { user, logout, isAdmin, permissions } = useApp();
+
+  const navItems = [
+    { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, perm: permissions?.dashboard },
+    { to: '/create-invoice', label: 'Invoice — Regular', icon: FilePlus, perm: permissions?.create_invoice },
+    { to: '/create-invoice-hourly', label: 'Invoice — Hourly', icon: Clock, perm: permissions?.create_invoice },
+    { to: '/invoices', label: 'My Invoices', icon: FileText, perm: permissions?.my_invoices },
+    { to: '/activity', label: 'Activity Logs', icon: Activity, perm: permissions?.activity_logs },
+    { to: '/pro', label: 'Pro Plan', icon: Crown, perm: permissions?.pro_plan },
+    { to: '/settings', label: 'Settings', icon: Settings, perm: permissions?.settings },
+  ];
+
+  const adminItems = [
+    { to: '/admin/users', label: 'User Management', icon: Users, perm: permissions?.admin_user_management },
+    { to: '/admin/system-logs', label: 'System Logs', icon: ScrollText, perm: permissions?.admin_system_logs },
+    { to: '/admin/invoice-reports', label: 'Invoice Reports', icon: BarChart3, perm: permissions?.admin_invoice_reports },
+  ];
+
+  const visibleNav = navItems.filter(i => i.perm !== false);
+  const visibleAdmin = isAdmin ? adminItems.filter(i => i.perm !== false) : [];
 
   return (
     <div className="flex min-h-screen bg-surface">
@@ -26,7 +35,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           </Link>
         </div>
         <nav className="flex-1 px-3 space-y-1">
-          {navItems.map(item => {
+          {visibleNav.map(item => {
             const active = pathname === item.to;
             return (
               <Link
@@ -43,6 +52,31 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               </Link>
             );
           })}
+
+          {visibleAdmin.length > 0 && (
+            <>
+              <div className="pt-4 pb-1 px-3">
+                <span className="text-[10px] uppercase tracking-wider text-sidebar-muted font-semibold">Admin</span>
+              </div>
+              {visibleAdmin.map(item => {
+                const active = pathname === item.to;
+                return (
+                  <Link
+                    key={item.to}
+                    to={item.to}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                      active
+                        ? 'bg-sidebar-accent text-sidebar-primary-foreground'
+                        : 'text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
+                    }`}
+                  >
+                    <item.icon className="h-4 w-4" />
+                    {item.label}
+                  </Link>
+                );
+              })}
+            </>
+          )}
         </nav>
         <div className="p-4 border-t border-sidebar-border">
           <div className="flex items-center gap-3 px-3 py-2">
