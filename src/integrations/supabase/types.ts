@@ -463,6 +463,85 @@ export type Database = {
           },
         ]
       }
+      survey_answers: {
+        Row: {
+          comment_value: string | null
+          created_at: string
+          id: string
+          satisfaction_value: number | null
+          submission_id: string
+          survey_question_id: string
+          updated_at: string
+          user_id: string
+          yes_no_value: boolean | null
+        }
+        Insert: {
+          comment_value?: string | null
+          created_at?: string
+          id?: string
+          satisfaction_value?: number | null
+          submission_id: string
+          survey_question_id: string
+          updated_at?: string
+          user_id: string
+          yes_no_value?: boolean | null
+        }
+        Update: {
+          comment_value?: string | null
+          created_at?: string
+          id?: string
+          satisfaction_value?: number | null
+          submission_id?: string
+          survey_question_id?: string
+          updated_at?: string
+          user_id?: string
+          yes_no_value?: boolean | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_answers_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "survey_reports_view"
+            referencedColumns: ["submission_id"]
+          },
+          {
+            foreignKeyName: "survey_answers_submission_id_fkey"
+            columns: ["submission_id"]
+            isOneToOne: false
+            referencedRelation: "survey_submissions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_answers_survey_question_id_fkey"
+            columns: ["survey_question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_answers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["owner_user_id"]
+          },
+          {
+            foreignKeyName: "survey_answers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "survey_reports_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "survey_answers_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       survey_questions: {
         Row: {
           answer_type: string
@@ -505,6 +584,7 @@ export type Database = {
           q3_satisfaction: number | null
           q4_pay_pro: boolean | null
           q5_comment: string | null
+          submitted_at: string | null
           updated_at: string
           user_id: string
         }
@@ -516,6 +596,7 @@ export type Database = {
           q3_satisfaction?: number | null
           q4_pay_pro?: boolean | null
           q5_comment?: string | null
+          submitted_at?: string | null
           updated_at?: string
           user_id: string
         }
@@ -527,6 +608,7 @@ export type Database = {
           q3_satisfaction?: number | null
           q4_pay_pro?: boolean | null
           q5_comment?: string | null
+          submitted_at?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -673,6 +755,65 @@ export type Database = {
           },
         ]
       }
+      user_survey_question_permissions: {
+        Row: {
+          can_answer: boolean
+          can_view: boolean
+          created_at: string
+          id: string
+          survey_question_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          can_answer?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          survey_question_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          can_answer?: boolean
+          can_view?: boolean
+          created_at?: string
+          id?: string
+          survey_question_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_survey_question_permissions_survey_question_id_fkey"
+            columns: ["survey_question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_survey_question_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["owner_user_id"]
+          },
+          {
+            foreignKeyName: "user_survey_question_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "survey_reports_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_survey_question_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       users_profile: {
         Row: {
           company_name: string | null
@@ -755,6 +896,7 @@ export type Database = {
           q4_pay_pro: boolean | null
           q5_comment: string | null
           submission_id: string | null
+          submitted_at: string | null
           user_id: string | null
         }
         Relationships: []
