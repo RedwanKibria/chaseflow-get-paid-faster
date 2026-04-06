@@ -21,9 +21,11 @@ export interface UserPagePermissions {
   activity_logs: boolean;
   pro_plan: boolean;
   settings: boolean;
+  review_feedback: boolean;
   admin_user_management: boolean;
   admin_system_logs: boolean;
   admin_invoice_reports: boolean;
+  admin_survey_reports: boolean;
 }
 
 export interface InvoiceItem {

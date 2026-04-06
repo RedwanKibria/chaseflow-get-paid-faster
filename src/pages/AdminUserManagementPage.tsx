@@ -24,9 +24,11 @@ interface Perms {
   activity_logs: boolean;
   pro_plan: boolean;
   settings: boolean;
+  review_feedback: boolean;
   admin_user_management: boolean;
   admin_system_logs: boolean;
   admin_invoice_reports: boolean;
+  admin_survey_reports: boolean;
 }
 
 const permKeys: { key: keyof Perms; label: string }[] = [
@@ -36,9 +38,11 @@ const permKeys: { key: keyof Perms; label: string }[] = [
   { key: 'activity_logs', label: 'Activity Logs' },
   { key: 'pro_plan', label: 'Pro Plan' },
   { key: 'settings', label: 'Settings' },
+  { key: 'review_feedback', label: 'Review & Feedback' },
   { key: 'admin_user_management', label: 'Admin: User Management' },
   { key: 'admin_system_logs', label: 'Admin: System Logs' },
   { key: 'admin_invoice_reports', label: 'Admin: Invoice Reports' },
+  { key: 'admin_survey_reports', label: 'Admin: Survey Reports' },
 ];
 
 export default function AdminUserManagementPage() {
