@@ -66,6 +66,13 @@ export type Database = {
             foreignKeyName: "activity_logs_actor_user_id_fkey"
             columns: ["actor_user_id"]
             isOneToOne: false
+            referencedRelation: "survey_reports_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "activity_logs_actor_user_id_fkey"
+            columns: ["actor_user_id"]
+            isOneToOne: false
             referencedRelation: "users_profile"
             referencedColumns: ["id"]
           },
@@ -94,6 +101,13 @@ export type Database = {
             foreignKeyName: "activity_logs_related_user_id_fkey"
             columns: ["related_user_id"]
             isOneToOne: false
+            referencedRelation: "survey_reports_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "activity_logs_related_user_id_fkey"
+            columns: ["related_user_id"]
+            isOneToOne: false
             referencedRelation: "users_profile"
             referencedColumns: ["id"]
           },
@@ -103,6 +117,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "invoice_reports_view"
             referencedColumns: ["owner_user_id"]
+          },
+          {
+            foreignKeyName: "activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "survey_reports_view"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "activity_logs_user_id_fkey"
@@ -327,6 +348,13 @@ export type Database = {
             foreignKeyName: "invoices_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "survey_reports_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "invoices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users_profile"
             referencedColumns: ["id"]
           },
@@ -423,6 +451,104 @@ export type Database = {
             foreignKeyName: "subscriptions_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "survey_reports_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "subscriptions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_profile"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_questions: {
+        Row: {
+          answer_type: string
+          created_at: string
+          id: string
+          is_active: boolean
+          question_key: string
+          question_order: number
+          question_text: string
+          updated_at: string
+        }
+        Insert: {
+          answer_type: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question_key: string
+          question_order: number
+          question_text: string
+          updated_at?: string
+        }
+        Update: {
+          answer_type?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question_key?: string
+          question_order?: number
+          question_text?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      survey_submissions: {
+        Row: {
+          created_at: string
+          id: string
+          q1_satisfaction: number | null
+          q2_satisfaction: number | null
+          q3_satisfaction: number | null
+          q4_pay_pro: boolean | null
+          q5_comment: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          q1_satisfaction?: number | null
+          q2_satisfaction?: number | null
+          q3_satisfaction?: number | null
+          q4_pay_pro?: boolean | null
+          q5_comment?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          q1_satisfaction?: number | null
+          q2_satisfaction?: number | null
+          q3_satisfaction?: number | null
+          q4_pay_pro?: boolean | null
+          q5_comment?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "invoice_reports_view"
+            referencedColumns: ["owner_user_id"]
+          },
+          {
+            foreignKeyName: "survey_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "survey_reports_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "survey_submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "users_profile"
             referencedColumns: ["id"]
           },
@@ -462,6 +588,13 @@ export type Database = {
             foreignKeyName: "user_access_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "survey_reports_view"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_access_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
             referencedRelation: "users_profile"
             referencedColumns: ["id"]
           },
@@ -471,6 +604,7 @@ export type Database = {
         Row: {
           activity_logs: boolean
           admin_invoice_reports: boolean
+          admin_survey_reports: boolean | null
           admin_system_logs: boolean
           admin_user_management: boolean
           create_invoice: boolean
@@ -478,6 +612,7 @@ export type Database = {
           dashboard: boolean
           my_invoices: boolean
           pro_plan: boolean
+          review_feedback: boolean | null
           settings: boolean
           updated_at: string
           user_id: string
@@ -485,6 +620,7 @@ export type Database = {
         Insert: {
           activity_logs?: boolean
           admin_invoice_reports?: boolean
+          admin_survey_reports?: boolean | null
           admin_system_logs?: boolean
           admin_user_management?: boolean
           create_invoice?: boolean
@@ -492,6 +628,7 @@ export type Database = {
           dashboard?: boolean
           my_invoices?: boolean
           pro_plan?: boolean
+          review_feedback?: boolean | null
           settings?: boolean
           updated_at?: string
           user_id: string
@@ -499,6 +636,7 @@ export type Database = {
         Update: {
           activity_logs?: boolean
           admin_invoice_reports?: boolean
+          admin_survey_reports?: boolean | null
           admin_system_logs?: boolean
           admin_user_management?: boolean
           create_invoice?: boolean
@@ -506,6 +644,7 @@ export type Database = {
           dashboard?: boolean
           my_invoices?: boolean
           pro_plan?: boolean
+          review_feedback?: boolean | null
           settings?: boolean
           updated_at?: string
           user_id?: string
@@ -517,6 +656,13 @@ export type Database = {
             isOneToOne: true
             referencedRelation: "invoice_reports_view"
             referencedColumns: ["owner_user_id"]
+          },
+          {
+            foreignKeyName: "user_page_permissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "survey_reports_view"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "user_page_permissions_user_id_fkey"
@@ -594,6 +740,22 @@ export type Database = {
           vat_amount: number | null
           vat_percent: number | null
           your_company_name: string | null
+        }
+        Relationships: []
+      }
+      survey_reports_view: {
+        Row: {
+          company_name: string | null
+          created_at: string | null
+          email: string | null
+          full_name: string | null
+          q1_satisfaction: number | null
+          q2_satisfaction: number | null
+          q3_satisfaction: number | null
+          q4_pay_pro: boolean | null
+          q5_comment: string | null
+          submission_id: string | null
+          user_id: string | null
         }
         Relationships: []
       }
