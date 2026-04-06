@@ -5,7 +5,7 @@ import { useApp } from '@/context/AppContext';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { Star, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 interface SurveyQuestion {
   id: string;
@@ -15,79 +15,80 @@ interface SurveyQuestion {
   question_order: number;
 }
 
-function RatingInput({ value, onChange, max = 5 }: { value: number; onChange: (v: number) => void; max?: number }) {
-  return (
-    <div className="flex gap-1">
-      {Array.from({ length: max }, (_, i) => i + 1).map(n => (
-        <button
-          key={n}
-          type="button"
-          onClick={() => onChange(n)}
-          className="transition-colors"
-        >
-          <Star
-            className={`h-7 w-7 ${n <= value ? 'fill-yellow-400 text-yellow-400' : 'text-muted-foreground/30'}`}
-          />
-        </button>
-      ))}
-    </div>
-  );
-}
-
-function YesNoInput({ value, onChange }: { value: boolean | null; onChange: (v: boolean) => void }) {
-  return (
-    <div className="flex gap-3">
-      {[true, false].map(v => (
-        <button
-          key={String(v)}
-          type="button"
-          onClick={() => onChange(v)}
-          className={`px-5 py-2 rounded-lg text-sm font-medium border transition-colors ${
-            value === v
-              ? 'bg-primary text-primary-foreground border-primary'
-              : 'bg-background text-foreground border-input hover:bg-muted'
-          }`}
-        >
-          {v ? 'Yes' : 'No'}
-        </button>
-      ))}
-    </div>
-  );
+interface QuestionPermission {
+  survey_question_id: string;
+  can_view: boolean;
+  can_answer: boolean;
 }
 
 export default function ReviewFeedbackPage() {
   const { user } = useApp();
   const [questions, setQuestions] = useState<SurveyQuestion[]>([]);
-  const [q1, setQ1] = useState(0);
-  const [q2, setQ2] = useState(0);
-  const [q3, setQ3] = useState(0);
-  const [q4, setQ4] = useState<boolean | null>(null);
-  const [q5, setQ5] = useState('');
+  const [questionPerms, setQuestionPerms] = useState<Map<string, QuestionPermission>>(new Map());
+  const [answers, setAnswers] = useState<Record<string, { satisfaction_value?: number; yes_no_value?: boolean; comment_value?: string }>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    supabase
-      .from('survey_questions')
-      .select('*')
-      .eq('is_active', true)
-      .order('question_order')
-      .then(({ data }) => {
-        if (data) setQuestions(data as SurveyQuestion[]);
+    if (!user) return;
+    Promise.all([
+      supabase.from('survey_questions').select('*').eq('is_active', true).order('question_order'),
+      supabase.from('user_survey_question_permissions').select('*').eq('user_id', user.id),
+    ]).then(([{ data: qs }, { data: perms }]) => {
+      const permMap = new Map<string, QuestionPermission>();
+      (perms ?? []).forEach((p: any) => permMap.set(p.survey_question_id, p));
+      setQuestionPerms(permMap);
+
+      const viewable = (qs ?? []).filter((q: any) => {
+        const perm = permMap.get(q.id);
+        return perm ? perm.can_view : true;
       });
-  }, []);
+      setQuestions(viewable as SurveyQuestion[]);
+    });
+  }, [user]);
+
+  const canAnswer = (questionId: string) => {
+    const perm = questionPerms.get(questionId);
+    return perm ? perm.can_answer : true;
+  };
+
+  const setAnswer = (questionId: string, field: string, value: any) => {
+    setAnswers(prev => ({
+      ...prev,
+      [questionId]: { ...prev[questionId], [field]: value },
+    }));
+  };
 
   const handleSubmit = async () => {
     if (!user) return;
     setSubmitting(true);
-    await supabase.from('survey_submissions').insert({
-      user_id: user.id,
-      q1_satisfaction: q1 || null,
-      q2_satisfaction: q2 || null,
-      q3_satisfaction: q3 || null,
-      q4_pay_pro: q4,
-      q5_comment: q5 || null,
-    });
+
+    const { data: submission, error: subError } = await supabase
+      .from('survey_submissions')
+      .insert({ user_id: user.id })
+      .select()
+      .single();
+
+    if (subError || !submission) {
+      setSubmitting(false);
+      return;
+    }
+
+    const answerRows = questions
+      .filter(q => canAnswer(q.id) && answers[q.id])
+      .map(q => ({
+        submission_id: submission.id,
+        user_id: user.id,
+        survey_question_id: q.id,
+        satisfaction_value: answers[q.id]?.satisfaction_value ?? null,
+        yes_no_value: answers[q.id]?.yes_no_value ?? null,
+        comment_value: answers[q.id]?.comment_value ?? null,
+      }));
+
+    if (answerRows.length > 0) {
+      await supabase.from('survey_answers').insert(answerRows);
+    }
+
     setSubmitting(false);
     setSubmitted(true);
   };
@@ -104,41 +105,80 @@ export default function ReviewFeedbackPage() {
     );
   }
 
-  const qMap: Record<string, React.ReactNode> = {};
-  questions.forEach(q => {
-    if (q.question_key === 'q1_satisfaction' || q.answer_type === 'rating' && q.question_order === 1) {
-      qMap[q.id] = <RatingInput value={q1} onChange={setQ1} />;
-    } else if (q.question_key === 'q2_satisfaction' || q.answer_type === 'rating' && q.question_order === 2) {
-      qMap[q.id] = <RatingInput value={q2} onChange={setQ2} />;
-    } else if (q.question_key === 'q3_satisfaction' || q.answer_type === 'rating' && q.question_order === 3) {
-      qMap[q.id] = <RatingInput value={q3} onChange={setQ3} />;
-    } else if (q.question_key === 'q4_pay_pro' || q.answer_type === 'boolean') {
-      qMap[q.id] = <YesNoInput value={q4} onChange={setQ4} />;
-    } else if (q.question_key === 'q5_comment' || q.answer_type === 'text') {
-      qMap[q.id] = (
-        <Textarea
-          value={q5}
-          onChange={e => setQ5(e.target.value)}
-          placeholder="Share your thoughts..."
-          rows={4}
-        />
-      );
-    }
-  });
-
   return (
     <DashboardLayout>
       <div className="animate-fade-in max-w-2xl mx-auto">
-        <h1 className="text-2xl font-bold text-foreground mb-1">Review & Feedback</h1>
-        <p className="text-muted-foreground mb-8">Help us improve ChaseFlow by sharing your experience</p>
+        <h1 className="text-2xl font-bold text-foreground mb-1">Help ChaseFlow Improve</h1>
+        <p className="text-muted-foreground mb-8">Your feedback helps us build a better product</p>
 
         <div className="space-y-6">
-          {questions.map(q => (
-            <div key={q.id} className="bg-card rounded-xl p-6 shadow-card">
-              <Label className="text-base font-medium text-foreground mb-3 block">{q.question_text}</Label>
-              {qMap[q.id] ?? <p className="text-sm text-muted-foreground">Unsupported question type</p>}
-            </div>
-          ))}
+          {questions.map(q => {
+            const disabled = !canAnswer(q.id);
+            const answer = answers[q.id] ?? {};
+
+            return (
+              <div key={q.id} className="bg-card rounded-xl p-6 shadow-card">
+                <Label className="text-base font-medium text-foreground mb-4 block">{q.question_text}</Label>
+
+                {q.answer_type === 'satisfaction_1_5' && (
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map(n => (
+                      <button
+                        key={n}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => setAnswer(q.id, 'satisfaction_value', n)}
+                        className={`h-10 w-10 rounded-lg text-sm font-semibold border transition-colors ${
+                          answer.satisfaction_value === n
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background text-foreground border-input hover:bg-muted'
+                        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        {n}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {q.answer_type === 'yes_no' && (
+                  <div className="flex gap-3">
+                    {[
+                      { label: 'Yes', value: true },
+                      { label: 'No', value: false },
+                    ].map(opt => (
+                      <button
+                        key={opt.label}
+                        type="button"
+                        disabled={disabled}
+                        onClick={() => setAnswer(q.id, 'yes_no_value', opt.value)}
+                        className={`px-5 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                          answer.yes_no_value === opt.value
+                            ? 'bg-primary text-primary-foreground border-primary'
+                            : 'bg-background text-foreground border-input hover:bg-muted'
+                        } ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+                      >
+                        {opt.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {q.answer_type === 'comment' && (
+                  <Textarea
+                    value={answer.comment_value ?? ''}
+                    onChange={e => setAnswer(q.id, 'comment_value', e.target.value)}
+                    placeholder="Share your thoughts..."
+                    rows={4}
+                    disabled={disabled}
+                  />
+                )}
+
+                {disabled && (
+                  <p className="text-xs text-muted-foreground mt-2">You do not have permission to answer this question.</p>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {questions.length > 0 && (

@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/context/AppContext';
@@ -31,6 +31,19 @@ interface Perms {
   admin_survey_reports: boolean;
 }
 
+interface SurveyQuestion {
+  id: string;
+  question_text: string;
+  question_order: number;
+}
+
+interface SurveyQuestionPerm {
+  id: string;
+  survey_question_id: string;
+  can_view: boolean;
+  can_answer: boolean;
+}
+
 const permKeys: { key: keyof Perms; label: string }[] = [
   { key: 'dashboard', label: 'Dashboard' },
   { key: 'create_invoice', label: 'Create Invoice' },
@@ -38,7 +51,7 @@ const permKeys: { key: keyof Perms; label: string }[] = [
   { key: 'activity_logs', label: 'Activity Logs' },
   { key: 'pro_plan', label: 'Pro Plan' },
   { key: 'settings', label: 'Settings' },
-  { key: 'review_feedback', label: 'Review & Feedback' },
+  { key: 'review_feedback', label: 'Help ChaseFlow Improve' },
   { key: 'admin_user_management', label: 'Admin: User Management' },
   { key: 'admin_system_logs', label: 'Admin: System Logs' },
   { key: 'admin_invoice_reports', label: 'Admin: Invoice Reports' },
@@ -50,6 +63,8 @@ export default function AdminUserManagementPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [editUser, setEditUser] = useState<UserRow | null>(null);
   const [perms, setPerms] = useState<Perms | null>(null);
+  const [surveyQuestions, setSurveyQuestions] = useState<SurveyQuestion[]>([]);
+  const [surveyPerms, setSurveyPerms] = useState<SurveyQuestionPerm[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchUsers = async () => {
@@ -66,7 +81,12 @@ export default function AdminUserManagementPage() {
     setLoading(false);
   };
 
-  useEffect(() => { fetchUsers(); }, []);
+  useEffect(() => {
+    fetchUsers();
+    supabase.from('survey_questions').select('id, question_text, question_order').order('question_order').then(({ data }) => {
+      if (data) setSurveyQuestions(data as SurveyQuestion[]);
+    });
+  }, []);
 
   const toggleActive = async (userId: string, active: boolean) => {
     await supabase.rpc('admin_set_user_active', { p_user_id: userId, p_is_active: active });
@@ -75,14 +95,27 @@ export default function AdminUserManagementPage() {
 
   const openPerms = async (u: UserRow) => {
     setEditUser(u);
-    const { data } = await supabase.from('user_page_permissions').select('*').eq('user_id', u.id).single();
-    if (data) setPerms(data as unknown as Perms);
+    const [{ data: pagePerms }, { data: sqPerms }] = await Promise.all([
+      supabase.from('user_page_permissions').select('*').eq('user_id', u.id).single(),
+      supabase.from('user_survey_question_permissions').select('*').eq('user_id', u.id),
+    ]);
+    if (pagePerms) setPerms(pagePerms as unknown as Perms);
+    setSurveyPerms((sqPerms ?? []) as unknown as SurveyQuestionPerm[]);
   };
 
   const savePerm = async (key: string, val: boolean) => {
     if (!editUser) return;
     await supabase.rpc('admin_set_user_permission', { p_user_id: editUser.id, p_permission_key: key, p_enabled: val });
     setPerms(prev => prev ? { ...prev, [key]: val } : prev);
+  };
+
+  const saveSurveyPerm = async (questionId: string, field: 'can_view' | 'can_answer', val: boolean) => {
+    if (!editUser) return;
+    const existing = surveyPerms.find(p => p.survey_question_id === questionId);
+    if (existing) {
+      await supabase.from('user_survey_question_permissions').update({ [field]: val }).eq('id', existing.id);
+      setSurveyPerms(prev => prev.map(p => p.id === existing.id ? { ...p, [field]: val } : p));
+    }
   };
 
   if (!isAdmin) {
@@ -136,18 +169,55 @@ export default function AdminUserManagementPage() {
         </div>
 
         <Dialog open={!!editUser} onOpenChange={() => setEditUser(null)}>
-          <DialogContent>
+          <DialogContent className="max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Permissions — {editUser?.full_name || editUser?.email}</DialogTitle>
             </DialogHeader>
             {perms && (
-              <div className="space-y-4 pt-2">
-                {permKeys.map(pk => (
-                  <div key={pk.key} className="flex items-center justify-between">
-                    <Label>{pk.label}</Label>
-                    <Switch checked={perms[pk.key]} onCheckedChange={v => savePerm(pk.key, v)} />
+              <div className="space-y-6 pt-2">
+                <div>
+                  <h4 className="text-sm font-semibold text-foreground mb-3">Page Permissions</h4>
+                  <div className="space-y-3">
+                    {permKeys.map(pk => (
+                      <div key={pk.key} className="flex items-center justify-between">
+                        <Label>{pk.label}</Label>
+                        <Switch checked={perms[pk.key]} onCheckedChange={v => savePerm(pk.key, v)} />
+                      </div>
+                    ))}
                   </div>
-                ))}
+                </div>
+
+                {surveyQuestions.length > 0 && (
+                  <div>
+                    <h4 className="text-sm font-semibold text-foreground mb-3">Survey Question Permissions</h4>
+                    <div className="space-y-4">
+                      {surveyQuestions.map(sq => {
+                        const perm = surveyPerms.find(p => p.survey_question_id === sq.id);
+                        return (
+                          <div key={sq.id} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                            <p className="text-sm text-foreground font-medium">{sq.question_text}</p>
+                            <div className="flex items-center gap-6">
+                              <div className="flex items-center gap-2">
+                                <Label className="text-xs">Can View</Label>
+                                <Switch
+                                  checked={perm?.can_view ?? true}
+                                  onCheckedChange={v => saveSurveyPerm(sq.id, 'can_view', v)}
+                                />
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Label className="text-xs">Can Answer</Label>
+                                <Switch
+                                  checked={perm?.can_answer ?? true}
+                                  onCheckedChange={v => saveSurveyPerm(sq.id, 'can_answer', v)}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </DialogContent>
