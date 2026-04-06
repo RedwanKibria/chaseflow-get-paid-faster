@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Check, Download, Search, XCircle, Trash2, CheckCircle2, X } from 'lucide-react';
+import { generateInvoicePdf } from '@/lib/generateInvoicePdf';
 
 const statusBadge = (status: string) => {
   const map: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
@@ -56,7 +57,8 @@ export default function MyInvoicesPage() {
     else setSelected(new Set(filtered.map(i => i.id)));
   };
 
-  const handleDownload = (inv: { id: string; invoice_code: string }) => {
+  const handleDownload = (inv: typeof filtered[number]) => {
+    generateInvoicePdf(inv);
     addLog({ invoice_id: inv.id, action_type: 'invoice_downloaded', description: `Invoice ${inv.invoice_code} downloaded` });
   };
 
