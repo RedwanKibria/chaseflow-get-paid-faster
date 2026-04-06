@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, Clock, FileText, Activity, Crown, Settings, LogOut, Zap, Users, ScrollText, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, FilePlus, Clock, FileText, Activity, Crown, Settings, LogOut, Zap, Users, ScrollText, BarChart3, MessageSquare, ClipboardList } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
@@ -12,6 +12,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { to: '/create-invoice-hourly', label: 'Invoice — Hourly', icon: Clock, perm: permissions?.create_invoice },
     { to: '/invoices', label: 'My Invoices', icon: FileText, perm: permissions?.my_invoices },
     { to: '/activity', label: 'Activity Logs', icon: Activity, perm: permissions?.activity_logs },
+    { to: '/review-feedback', label: 'Review & Feedback', icon: MessageSquare, perm: permissions?.review_feedback },
     { to: '/pro', label: 'Pro Plan', icon: Crown, perm: permissions?.pro_plan },
     { to: '/settings', label: 'Settings', icon: Settings, perm: permissions?.settings },
   ];
@@ -20,6 +21,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { to: '/admin/users', label: 'User Management', icon: Users, perm: permissions?.admin_user_management },
     { to: '/admin/system-logs', label: 'System Logs', icon: ScrollText, perm: permissions?.admin_system_logs },
     { to: '/admin/invoice-reports', label: 'Invoice Reports', icon: BarChart3, perm: permissions?.admin_invoice_reports },
+    { to: '/admin/survey-reports', label: 'Survey Reports', icon: ClipboardList, perm: permissions?.admin_survey_reports },
   ];
 
   const visibleNav = navItems.filter(i => i.perm !== false);
