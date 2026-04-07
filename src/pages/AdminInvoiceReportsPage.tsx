@@ -3,8 +3,10 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/context/AppContext';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, CheckCircle2, X } from 'lucide-react';
+import { Search, CheckCircle2, X, Download, FileSpreadsheet } from 'lucide-react';
+import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
 
 interface ReportRow {
   id: string | null;
@@ -76,6 +78,35 @@ export default function AdminInvoiceReportsPage() {
     });
   }, [rows, search, filterStatus]);
 
+  const exportData = useMemo(() => {
+    return filtered.map(r => ({
+      'Invoice Code': r.invoice_code ?? '',
+      'Type': r.invoice_type ?? '',
+      'Client': r.client_name ?? '',
+      'Company': r.client_company ?? '',
+      'Your Company': r.your_company_name ?? '',
+      'Due Date': r.due_date ?? '',
+      'Subtotal': r.subtotal_amount ?? 0,
+      'VAT %': r.vat_percent ?? 0,
+      'VAT Amount': r.vat_amount ?? 0,
+      'TAX %': r.tax_percent ?? 0,
+      'TAX Amount': r.tax_amount ?? 0,
+      'Total': r.total_amount ?? 0,
+      'Status': r.status ?? '',
+      'Paid': r.paid ? 'Yes' : 'No',
+      'Owner': r.owner_full_name ?? '',
+      'Owner Email': r.owner_email ?? '',
+      'Owner Role': r.owner_role ?? '',
+      'Owner Active': r.owner_is_active ? 'Yes' : 'No',
+      'Before 3d Sent': r.before_3_sent ? 'Yes' : 'No',
+      'Due Sent': r.due_sent ? 'Yes' : 'No',
+      'After 3d Sent': r.after_3_sent ? 'Yes' : 'No',
+      'After 7d Sent': r.after_7_sent ? 'Yes' : 'No',
+      'After 14d Sent': r.after_14_sent ? 'Yes' : 'No',
+      'Created': r.created_at ? new Date(r.created_at).toLocaleDateString() : '',
+    }));
+  }, [filtered]);
+
   if (!isAdmin) {
     return <DashboardLayout><div className="p-12 text-center text-muted-foreground">Admin access required.</div></DashboardLayout>;
   }
@@ -83,7 +114,17 @@ export default function AdminInvoiceReportsPage() {
   return (
     <DashboardLayout>
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground mb-1">Invoice Reports</h1>
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="text-2xl font-bold text-foreground">Invoice Reports</h1>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadCsv(exportData, 'invoice-report')} disabled={filtered.length === 0}>
+              <Download className="h-4 w-4 mr-1" /> CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadExcel(exportData, 'invoice-report')} disabled={filtered.length === 0}>
+              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel
+            </Button>
+          </div>
+        </div>
         <p className="text-muted-foreground mb-8">Comprehensive invoice overview across all users</p>
 
         <div className="bg-card rounded-xl p-5 shadow-card mb-6">
