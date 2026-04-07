@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -6,12 +6,39 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
+import { supabase } from '@/integrations/supabase/client';
+
+interface Subscription {
+  plan: string;
+  status: string;
+  renews_at: string | null;
+}
 
 export default function SettingsPage() {
   const { user, updateUser } = useApp();
   const [name, setName] = useState(user?.full_name || '');
   const [companyName, setCompanyName] = useState(user?.company_name || '');
   const [saved, setSaved] = useState(false);
+  const [subscription, setSubscription] = useState<Subscription | null>(null);
+
+  useEffect(() => {
+    if (!user) return;
+    supabase
+      .from('subscriptions')
+      .select('plan, status, renews_at')
+      .eq('user_id', user.id)
+      .single()
+      .then(({ data }) => {
+        if (data) setSubscription(data as Subscription);
+      });
+  }, [user?.id]);
+
+  useEffect(() => {
+    if (user) {
+      setName(user.full_name || '');
+      setCompanyName(user.company_name || '');
+    }
+  }, [user]);
 
   const handleSave = () => {
     updateUser({ full_name: name, company_name: companyName });
@@ -64,11 +91,27 @@ export default function SettingsPage() {
             </div>
           </div>
 
-          <div className="bg-card rounded-xl p-6 shadow-card space-y-3">
+          <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
             <h3 className="font-semibold text-foreground">Plan & Billing</h3>
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted-foreground">Current Plan:</span>
-              <Badge variant="secondary">{user?.plan === 'pro' ? 'Pro' : 'Free'}</Badge>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">Current Plan:</span>
+                <Badge variant={subscription?.plan === 'pro' ? 'default' : 'secondary'}>
+                  {subscription?.plan === 'pro' ? 'Pro' : 'Free'}
+                </Badge>
+              </div>
+              <div className="flex items-center gap-3">
+                <span className="text-sm text-muted-foreground">Status:</span>
+                <Badge variant={subscription?.status === 'active' ? 'default' : 'outline'}>
+                  {subscription?.status || 'inactive'}
+                </Badge>
+              </div>
+              {subscription?.renews_at && (
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground">Renews:</span>
+                  <span className="text-sm text-foreground">{new Date(subscription.renews_at).toLocaleDateString()}</span>
+                </div>
+              )}
             </div>
           </div>
         </div>
