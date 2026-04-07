@@ -3,8 +3,10 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/context/AppContext';
 import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search } from 'lucide-react';
+import { Search, Download, FileSpreadsheet } from 'lucide-react';
+import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
 
 interface SurveyRow {
   submission_id: string | null;
@@ -17,6 +19,7 @@ interface SurveyRow {
   q3_satisfaction: number | null;
   q4_pay_pro: boolean | null;
   q5_comment: string | null;
+  submitted_at: string | null;
   created_at: string | null;
 }
 
@@ -50,6 +53,21 @@ export default function AdminSurveyReportsPage() {
     );
   }, [rows, search]);
 
+  const exportData = useMemo(() => {
+    return filtered.map(r => ({
+      'Name': r.full_name ?? '',
+      'Email': r.email ?? '',
+      'Company': r.company_name ?? '',
+      'Q1 Satisfaction': r.q1_satisfaction ?? '',
+      'Q2 Satisfaction': r.q2_satisfaction ?? '',
+      'Q3 Satisfaction': r.q3_satisfaction ?? '',
+      'Would Pay Pro': r.q4_pay_pro === null ? '' : r.q4_pay_pro ? 'Yes' : 'No',
+      'Comment': r.q5_comment ?? '',
+      'Submitted': r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '',
+      'Created': r.created_at ? new Date(r.created_at).toLocaleDateString() : '',
+    }));
+  }, [filtered]);
+
   if (!isAdmin) {
     return (
       <DashboardLayout>
@@ -61,7 +79,17 @@ export default function AdminSurveyReportsPage() {
   return (
     <DashboardLayout>
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground mb-1">Survey Reports</h1>
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="text-2xl font-bold text-foreground">Survey Reports</h1>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadCsv(exportData, 'survey-report')} disabled={filtered.length === 0}>
+              <Download className="h-4 w-4 mr-1" /> CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadExcel(exportData, 'survey-report')} disabled={filtered.length === 0}>
+              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel
+            </Button>
+          </div>
+        </div>
         <p className="text-muted-foreground mb-8">View all user survey submissions</p>
 
         <div className="bg-card rounded-xl p-5 shadow-card mb-6">
@@ -110,7 +138,7 @@ export default function AdminSurveyReportsPage() {
                     </td>
                     <td className="p-3 text-muted-foreground max-w-[200px] truncate">{r.q5_comment || '—'}</td>
                     <td className="p-3 text-muted-foreground whitespace-nowrap">
-                      {r.created_at ? new Date(r.created_at).toLocaleDateString() : '—'}
+                      {r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : (r.created_at ? new Date(r.created_at).toLocaleDateString() : '—')}
                     </td>
                   </tr>
                 ))}

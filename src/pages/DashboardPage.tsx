@@ -4,7 +4,7 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import { FileText, AlertTriangle, Clock, DollarSign, Check, Download, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { generateInvoicePdf } from '@/lib/generateInvoicePdf';
+import { downloadInvoicePdf } from '@/lib/invoiceStorage';
 
 const statusBadge = (status: string) => {
   const map: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
@@ -20,7 +20,6 @@ const statusBadge = (status: string) => {
 
 export default function DashboardPage() {
   const { invoices, markAsPaid, cancelInvoice, addLog } = useApp();
-
   const activeInvoices = useMemo(() => invoices.filter(i => !i.is_deleted), [invoices]);
 
   const stats = useMemo(() => {
@@ -38,8 +37,8 @@ export default function DashboardPage() {
     { label: 'Outstanding', value: `£${stats.outstanding.toLocaleString()}`, icon: DollarSign, color: 'text-success' },
   ];
 
-  const handleDownload = (inv: typeof activeInvoices[number]) => {
-    generateInvoicePdf(inv);
+  const handleDownload = async (inv: typeof activeInvoices[number]) => {
+    await downloadInvoicePdf(inv);
     addLog({ invoice_id: inv.id, action_type: 'invoice_downloaded', description: `Invoice ${inv.invoice_code} downloaded` });
   };
 
