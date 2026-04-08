@@ -113,7 +113,7 @@ export default function AdminUserManagementPage() {
     if (!editUser) return;
     const existing = surveyPerms.find(p => p.survey_question_id === questionId);
     if (existing) {
-      await supabase.from('user_survey_question_permissions').update({ [field]: val }).eq('id', existing.id);
+      await supabase.from('user_survey_question_permissions').update({ [field]: val } as any).eq('id', existing.id);
       setSurveyPerms(prev => prev.map(p => p.id === existing.id ? { ...p, [field]: val } : p));
     }
   };
