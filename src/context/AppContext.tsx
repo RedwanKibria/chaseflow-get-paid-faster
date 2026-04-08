@@ -321,34 +321,25 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [addLog, refreshInvoices]);
 
   const markAsPaid = useCallback(async (id: string) => {
-    await supabase.rpc('mark_invoice_paid', { p_invoice_id: id });
-    await addLog({
-      invoice_id: id,
-      action_type: 'invoice_paid',
-      description: `Invoice marked as paid`,
-    });
+    const { error } = await supabase.rpc('mark_invoice_paid', { p_invoice_id: id });
+    if (error) console.error('markAsPaid error:', error.message);
     await refreshInvoices();
-  }, [addLog, refreshInvoices]);
+    await refreshLogs();
+  }, [refreshInvoices, refreshLogs]);
 
   const cancelInvoice = useCallback(async (id: string) => {
-    await supabase.rpc('cancel_invoice', { p_invoice_id: id });
-    await addLog({
-      invoice_id: id,
-      action_type: 'invoice_cancelled',
-      description: `Invoice cancelled`,
-    });
+    const { error } = await supabase.rpc('cancel_invoice', { p_invoice_id: id });
+    if (error) console.error('cancelInvoice error:', error.message);
     await refreshInvoices();
-  }, [addLog, refreshInvoices]);
+    await refreshLogs();
+  }, [refreshInvoices, refreshLogs]);
 
   const softDeleteInvoice = useCallback(async (id: string) => {
-    await supabase.rpc('soft_delete_invoice', { p_invoice_id: id });
-    await addLog({
-      invoice_id: id,
-      action_type: 'invoice_deleted',
-      description: `Invoice deleted`,
-    });
+    const { error } = await supabase.rpc('soft_delete_invoice', { p_invoice_id: id });
+    if (error) console.error('softDeleteInvoice error:', error.message);
     await refreshInvoices();
-  }, [addLog, refreshInvoices]);
+    await refreshLogs();
+  }, [refreshInvoices, refreshLogs]);
 
   const updateUser = useCallback(async (u: Partial<User>) => {
     if (!session?.user) return;
