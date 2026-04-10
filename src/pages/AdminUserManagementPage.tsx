@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 interface UserRow {
   id: string;
@@ -41,7 +42,6 @@ interface SurveyQuestionPerm {
   id: string;
   survey_question_id: string;
   can_view: boolean;
-  can_answer: boolean;
 }
 
 const permKeys: { key: keyof Perms; label: string }[] = [
@@ -63,9 +63,12 @@ export default function AdminUserManagementPage() {
   const [users, setUsers] = useState<UserRow[]>([]);
   const [editUser, setEditUser] = useState<UserRow | null>(null);
   const [perms, setPerms] = useState<Perms | null>(null);
+  const [dirtyPerms, setDirtyPerms] = useState<Partial<Perms>>({});
   const [surveyQuestions, setSurveyQuestions] = useState<SurveyQuestion[]>([]);
   const [surveyPerms, setSurveyPerms] = useState<SurveyQuestionPerm[]>([]);
+  const [dirtySurveyPerms, setDirtySurveyPerms] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -95,27 +98,67 @@ export default function AdminUserManagementPage() {
 
   const openPerms = async (u: UserRow) => {
     setEditUser(u);
+    setDirtyPerms({});
+    setDirtySurveyPerms({});
     const [{ data: pagePerms }, { data: sqPerms }] = await Promise.all([
       supabase.from('user_page_permissions').select('*').eq('user_id', u.id).single(),
       supabase.from('user_survey_question_permissions').select('*').eq('user_id', u.id),
     ]);
     if (pagePerms) setPerms(pagePerms as unknown as Perms);
-    setSurveyPerms((sqPerms ?? []) as unknown as SurveyQuestionPerm[]);
+    setSurveyPerms((sqPerms ?? []).map((p: any) => ({ id: p.id, survey_question_id: p.survey_question_id, can_view: p.can_view })));
   };
 
-  const savePerm = async (key: string, val: boolean) => {
-    if (!editUser) return;
-    await supabase.rpc('admin_set_user_permission', { p_user_id: editUser.id, p_permission_key: key, p_enabled: val });
-    setPerms(prev => prev ? { ...prev, [key]: val } : prev);
+  const localTogglePerm = (key: keyof Perms, val: boolean) => {
+    setDirtyPerms(prev => ({ ...prev, [key]: val }));
   };
 
-  const saveSurveyPerm = async (questionId: string, field: 'can_view' | 'can_answer', val: boolean) => {
+  const localToggleSurveyPerm = (questionId: string, val: boolean) => {
+    setDirtySurveyPerms(prev => ({ ...prev, [questionId]: val }));
+  };
+
+  const getPermValue = (key: keyof Perms): boolean => {
+    if (key in dirtyPerms) return dirtyPerms[key]!;
+    return perms ? perms[key] : true;
+  };
+
+  const getSurveyPermValue = (questionId: string): boolean => {
+    if (questionId in dirtySurveyPerms) return dirtySurveyPerms[questionId];
+    const perm = surveyPerms.find(p => p.survey_question_id === questionId);
+    return perm?.can_view ?? true;
+  };
+
+  const hasDirtyChanges = Object.keys(dirtyPerms).length > 0 || Object.keys(dirtySurveyPerms).length > 0;
+
+  const handleSave = async () => {
     if (!editUser) return;
-    const existing = surveyPerms.find(p => p.survey_question_id === questionId);
-    if (existing) {
-      await supabase.from('user_survey_question_permissions').update({ [field]: val } as any).eq('id', existing.id);
-      setSurveyPerms(prev => prev.map(p => p.id === existing.id ? { ...p, [field]: val } : p));
+    setSaving(true);
+    try {
+      // Save page permissions
+      for (const [key, val] of Object.entries(dirtyPerms)) {
+        await supabase.rpc('admin_set_user_permission', { p_user_id: editUser.id, p_permission_key: key, p_enabled: val });
+      }
+      // Save survey question permissions
+      for (const [questionId, val] of Object.entries(dirtySurveyPerms)) {
+        const existing = surveyPerms.find(p => p.survey_question_id === questionId);
+        if (existing) {
+          await supabase.from('user_survey_question_permissions').update({ can_view: val } as any).eq('id', existing.id);
+        }
+      }
+      // Apply dirty changes to local state
+      setPerms(prev => prev ? { ...prev, ...dirtyPerms } : prev);
+      setSurveyPerms(prev => prev.map(p => {
+        if (p.survey_question_id in dirtySurveyPerms) {
+          return { ...p, can_view: dirtySurveyPerms[p.survey_question_id] };
+        }
+        return p;
+      }));
+      setDirtyPerms({});
+      setDirtySurveyPerms({});
+      toast.success('Permissions saved successfully');
+    } catch {
+      toast.error('Failed to save permissions');
     }
+    setSaving(false);
   };
 
   if (!isAdmin) {
@@ -181,7 +224,7 @@ export default function AdminUserManagementPage() {
                     {permKeys.map(pk => (
                       <div key={pk.key} className="flex items-center justify-between">
                         <Label>{pk.label}</Label>
-                        <Switch checked={perms[pk.key]} onCheckedChange={v => savePerm(pk.key, v)} />
+                        <Switch checked={getPermValue(pk.key)} onCheckedChange={v => localTogglePerm(pk.key, v)} />
                       </div>
                     ))}
                   </div>
@@ -191,33 +234,27 @@ export default function AdminUserManagementPage() {
                   <div>
                     <h4 className="text-sm font-semibold text-foreground mb-3">Survey Question Permissions</h4>
                     <div className="space-y-4">
-                      {surveyQuestions.map(sq => {
-                        const perm = surveyPerms.find(p => p.survey_question_id === sq.id);
-                        return (
-                          <div key={sq.id} className="bg-muted/30 rounded-lg p-3 space-y-2">
-                            <p className="text-sm text-foreground font-medium">{sq.question_text}</p>
-                            <div className="flex items-center gap-6">
-                              <div className="flex items-center gap-2">
-                                <Label className="text-xs">Can View</Label>
-                                <Switch
-                                  checked={perm?.can_view ?? true}
-                                  onCheckedChange={v => saveSurveyPerm(sq.id, 'can_view', v)}
-                                />
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Label className="text-xs">Can Answer</Label>
-                                <Switch
-                                  checked={perm?.can_answer ?? true}
-                                  onCheckedChange={v => saveSurveyPerm(sq.id, 'can_answer', v)}
-                                />
-                              </div>
-                            </div>
+                      {surveyQuestions.map(sq => (
+                        <div key={sq.id} className="bg-muted/30 rounded-lg p-3 space-y-2">
+                          <p className="text-sm text-foreground font-medium">{sq.question_text}</p>
+                          <div className="flex items-center gap-2">
+                            <Label className="text-xs">Can View</Label>
+                            <Switch
+                              checked={getSurveyPermValue(sq.id)}
+                              onCheckedChange={v => localToggleSurveyPerm(sq.id, v)}
+                            />
                           </div>
-                        );
-                      })}
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
+
+                <div className="flex justify-end pt-2 border-t border-border">
+                  <Button onClick={handleSave} disabled={!hasDirtyChanges || saving}>
+                    {saving ? 'Saving...' : 'Save Permissions'}
+                  </Button>
+                </div>
               </div>
             )}
           </DialogContent>
