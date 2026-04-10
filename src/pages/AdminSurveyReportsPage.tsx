@@ -5,7 +5,8 @@ import { useApp } from '@/context/AppContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Search, Download, FileSpreadsheet } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Search, Download, FileSpreadsheet, Eye } from 'lucide-react';
 import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
 
 interface SurveyRow {
@@ -23,20 +24,30 @@ interface SurveyRow {
   created_at: string | null;
 }
 
+interface SurveyQuestion {
+  id: string;
+  question_text: string;
+  question_order: number;
+  question_key: string;
+}
+
 export default function AdminSurveyReportsPage() {
   const { isAdmin } = useApp();
   const [rows, setRows] = useState<SurveyRow[]>([]);
+  const [questions, setQuestions] = useState<SurveyQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [viewRow, setViewRow] = useState<SurveyRow | null>(null);
 
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
-      const { data } = await supabase
-        .from('survey_reports_view')
-        .select('*')
-        .order('created_at', { ascending: false });
+      const [{ data }, { data: qs }] = await Promise.all([
+        supabase.from('survey_reports_view').select('*').order('created_at', { ascending: false }),
+        supabase.from('survey_questions').select('id, question_text, question_order, question_key').order('question_order'),
+      ]);
       if (data) setRows(data as SurveyRow[]);
+      if (qs) setQuestions(qs as SurveyQuestion[]);
       setLoading(false);
     };
     fetch();
@@ -48,8 +59,7 @@ export default function AdminSurveyReportsPage() {
     return rows.filter(r =>
       (r.full_name?.toLowerCase().includes(s)) ||
       (r.email?.toLowerCase().includes(s)) ||
-      (r.company_name?.toLowerCase().includes(s)) ||
-      (r.q5_comment?.toLowerCase().includes(s))
+      (r.company_name?.toLowerCase().includes(s))
     );
   }, [rows, search]);
 
@@ -64,9 +74,18 @@ export default function AdminSurveyReportsPage() {
       'Would Pay Pro': r.q4_pay_pro === null ? '' : r.q4_pay_pro ? 'Yes' : 'No',
       'Comment': r.q5_comment ?? '',
       'Submitted': r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '',
-      'Created': r.created_at ? new Date(r.created_at).toLocaleDateString() : '',
     }));
   }, [filtered]);
+
+  const getAnswerForQuestion = (row: SurveyRow, q: SurveyQuestion): string => {
+    const key = q.question_key;
+    if (key === 'q1_satisfaction') return row.q1_satisfaction !== null ? `${row.q1_satisfaction}/5` : 'Not answered';
+    if (key === 'q2_satisfaction') return row.q2_satisfaction !== null ? `${row.q2_satisfaction}/5` : 'Not answered';
+    if (key === 'q3_satisfaction') return row.q3_satisfaction !== null ? `${row.q3_satisfaction}/5` : 'Not answered';
+    if (key === 'q4_pay_pro') return row.q4_pay_pro === null ? 'Not answered' : row.q4_pay_pro ? 'Yes' : 'No';
+    if (key === 'q5_comment') return row.q5_comment || 'No comment';
+    return '—';
+  };
 
   if (!isAdmin) {
     return (
@@ -96,7 +115,7 @@ export default function AdminSurveyReportsPage() {
           <div className="relative max-w-sm">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search by name, email, or comment…"
+              placeholder="Search by name, email…"
               value={search}
               onChange={e => setSearch(e.target.value)}
               className="pl-9"
@@ -116,8 +135,8 @@ export default function AdminSurveyReportsPage() {
                   <th className="text-center p-3 font-medium text-muted-foreground">Q2</th>
                   <th className="text-center p-3 font-medium text-muted-foreground">Q3</th>
                   <th className="text-center p-3 font-medium text-muted-foreground">Pay Pro?</th>
-                  <th className="text-left p-3 font-medium text-muted-foreground">Comment</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Submitted</th>
+                  <th className="text-right p-3 font-medium text-muted-foreground">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -136,9 +155,13 @@ export default function AdminSurveyReportsPage() {
                         </Badge>
                       )}
                     </td>
-                    <td className="p-3 text-muted-foreground max-w-[200px] truncate">{r.q5_comment || '—'}</td>
                     <td className="p-3 text-muted-foreground whitespace-nowrap">
                       {r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : (r.created_at ? new Date(r.created_at).toLocaleDateString() : '—')}
+                    </td>
+                    <td className="p-3 text-right">
+                      <Button size="sm" variant="outline" onClick={() => setViewRow(r)} className="h-7 text-xs">
+                        <Eye className="h-3 w-3 mr-1" /> View
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -150,6 +173,33 @@ export default function AdminSurveyReportsPage() {
             <div className="p-12 text-center text-muted-foreground">No survey submissions found.</div>
           )}
         </div>
+
+        <Dialog open={!!viewRow} onOpenChange={() => setViewRow(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>Survey Response — {viewRow?.full_name || viewRow?.email || 'User'}</DialogTitle>
+            </DialogHeader>
+            {viewRow && (
+              <div className="space-y-4 pt-2">
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">Email:</span> {viewRow.email || '—'}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  <span className="font-medium text-foreground">Submitted:</span>{' '}
+                  {viewRow.submitted_at ? new Date(viewRow.submitted_at).toLocaleString() : '—'}
+                </div>
+                <div className="border-t border-border pt-4 space-y-4">
+                  {questions.map(q => (
+                    <div key={q.id} className="bg-muted/30 rounded-lg p-4">
+                      <p className="text-sm font-medium text-foreground mb-1">Q{q.question_order}. {q.question_text}</p>
+                      <p className="text-sm text-muted-foreground">{getAnswerForQuestion(viewRow, q)}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </DashboardLayout>
   );

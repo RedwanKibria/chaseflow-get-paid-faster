@@ -23,17 +23,44 @@ export default function AdminSystemLogsPage() {
   const [filterAction, setFilterAction] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
+  const [userEmailMap, setUserEmailMap] = useState<Map<string, string>>(new Map());
 
   const invoiceMap = useMemo(() => new Map(invoices.map(i => [i.id, i.invoice_code])), [invoices]);
 
   useEffect(() => {
     if (!isAdmin) return;
+
+    // Fetch logs
     supabase
       .from('activity_logs')
       .select('id, log_code, actor_user_id, related_user_id, invoice_id, action_type, description, created_at')
       .order('created_at', { ascending: false })
       .limit(500)
-      .then(({ data }) => setLogs((data ?? []) as LogRow[]));
+      .then(({ data }) => {
+        const rows = (data ?? []) as LogRow[];
+        setLogs(rows);
+
+        // Collect unique user IDs for actor and related
+        const userIds = new Set<string>();
+        rows.forEach(l => {
+          if (l.actor_user_id) userIds.add(l.actor_user_id);
+          if (l.related_user_id) userIds.add(l.related_user_id);
+        });
+
+        if (userIds.size > 0) {
+          supabase
+            .from('users_profile')
+            .select('id, email')
+            .in('id', Array.from(userIds))
+            .then(({ data: profiles }) => {
+              const map = new Map<string, string>();
+              (profiles ?? []).forEach((p: any) => {
+                if (p.email) map.set(p.id, p.email);
+              });
+              setUserEmailMap(map);
+            });
+        }
+      });
   }, [isAdmin]);
 
   const actionTypes = useMemo(() => [...new Set(logs.map(l => l.action_type))], [logs]);
@@ -95,8 +122,8 @@ export default function AdminSystemLogsPage() {
                 {filtered.map(log => (
                   <tr key={log.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3 text-muted-foreground font-mono text-xs">{log.log_code || '—'}</td>
-                    <td className="p-3 text-muted-foreground text-xs font-mono">{log.actor_user_id?.slice(0, 8) || '—'}</td>
-                    <td className="p-3 text-muted-foreground text-xs font-mono">{log.related_user_id?.slice(0, 8) || '—'}</td>
+                    <td className="p-3 text-muted-foreground text-xs">{log.actor_user_id ? (userEmailMap.get(log.actor_user_id) || log.actor_user_id.slice(0, 8)) : '—'}</td>
+                    <td className="p-3 text-muted-foreground text-xs">{log.related_user_id ? (userEmailMap.get(log.related_user_id) || log.related_user_id.slice(0, 8)) : '—'}</td>
                     <td className="p-3">
                       <span className="px-2 py-0.5 rounded-full bg-accent text-accent-foreground text-xs font-medium">
                         {log.action_type.replace(/_/g, ' ')}
