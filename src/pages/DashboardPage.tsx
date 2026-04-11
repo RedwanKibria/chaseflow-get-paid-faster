@@ -24,7 +24,7 @@ export default function DashboardPage() {
   const activeInvoices = useMemo(() => invoices.filter(i => !i.is_deleted), [invoices]);
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  const currency = (user as any)?.currency || 'GBP';
+  const currency = user?.currency || 'GBP';
   const currencySymbol = getCurrencySymbol(currency);
 
   const stats = useMemo(() => {

@@ -71,7 +71,7 @@ export default function SettingsPage() {
   const { user, updateUser } = useApp();
   const [name, setName] = useState(user?.full_name || '');
   const [companyName, setCompanyName] = useState(user?.company_name || '');
-  const [currency, setCurrency] = useState((user as any)?.currency || 'GBP');
+  const [currency, setCurrency] = useState(user?.currency || 'GBP');
   const [saved, setSaved] = useState(false);
   const [subscription, setSubscription] = useState<Subscription | null>(null);
 

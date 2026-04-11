@@ -35,7 +35,7 @@ export default function MyInvoicesPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
 
-  const currency = (user as any)?.currency || 'GBP';
+  const currency = user?.currency || 'GBP';
   const currencySymbol = getCurrencySymbol(currency);
 
   const filtered = useMemo(() => {
