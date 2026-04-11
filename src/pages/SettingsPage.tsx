@@ -89,7 +89,6 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (!user) return;
-    // Fetch currency from profile
     supabase.from('users_profile').select('currency').eq('id', user.id).single().then(({ data }) => {
       if (data && (data as any).currency) setCurrency((data as any).currency);
     });
@@ -110,8 +109,7 @@ export default function SettingsPage() {
       p_company_name: companyName,
       p_currency: currency,
     });
-    // Update local state
-    updateUser({ full_name: name, company_name: companyName, currency } as any);
+    updateUser({ full_name: name, company_name: companyName, currency });
     setSaved(true);
     setTimeout(() => setSaved(false), 2000);
   };
