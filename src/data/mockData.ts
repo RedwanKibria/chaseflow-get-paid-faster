@@ -9,6 +9,7 @@ export const mockUser: User = {
   full_name: 'Alex Morgan',
   email: 'alex@chaseflow.io',
   company_name: 'ChaseFlow Ltd',
+  currency: 'GBP',
   plan: 'free',
   created_at: '2024-01-15T10:00:00Z',
 };

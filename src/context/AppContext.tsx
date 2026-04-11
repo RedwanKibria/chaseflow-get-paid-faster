@@ -81,6 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       full_name: profile?.full_name ?? '',
       email: profile?.email ?? email,
       company_name: profile?.company_name ?? null,
+      currency: (profile as any)?.currency ?? 'GBP',
       plan: (profile?.plan as 'free' | 'pro') ?? 'free',
       created_at: profile?.created_at ?? new Date().toISOString(),
     });
@@ -346,6 +347,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
     await supabase.rpc('update_my_profile', {
       p_full_name: u.full_name ?? user?.full_name ?? '',
       p_company_name: u.company_name ?? user?.company_name ?? '',
+      p_currency: u.currency ?? user?.currency ?? 'GBP',
     });
     setUser(prev => prev ? { ...prev, ...u } : prev);
   }, [session, user]);
