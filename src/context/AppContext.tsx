@@ -81,6 +81,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       full_name: profile?.full_name ?? '',
       email: profile?.email ?? email,
       company_name: profile?.company_name ?? null,
+      currency: (profile as any)?.currency ?? 'GBP',
       plan: (profile?.plan as 'free' | 'pro') ?? 'free',
       created_at: profile?.created_at ?? new Date().toISOString(),
     });

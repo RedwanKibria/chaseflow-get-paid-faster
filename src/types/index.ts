@@ -3,6 +3,7 @@ export interface User {
   full_name: string;
   email: string;
   company_name: string | null;
+  currency: string;
   plan: 'free' | 'pro';
   created_at: string;
 }
