@@ -818,6 +818,7 @@ export type Database = {
         Row: {
           company_name: string | null
           created_at: string
+          currency: string
           email: string | null
           full_name: string | null
           id: string
@@ -827,6 +828,7 @@ export type Database = {
         Insert: {
           company_name?: string | null
           created_at?: string
+          currency?: string
           email?: string | null
           full_name?: string | null
           id: string
@@ -836,6 +838,7 @@ export type Database = {
         Update: {
           company_name?: string | null
           created_at?: string
+          currency?: string
           email?: string | null
           full_name?: string | null
           id?: string
@@ -956,10 +959,19 @@ export type Database = {
         Args: { p_invoice_id: string }
         Returns: undefined
       }
-      update_my_profile: {
-        Args: { p_company_name: string; p_full_name: string }
-        Returns: undefined
-      }
+      update_my_profile:
+        | {
+            Args: { p_company_name: string; p_full_name: string }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_company_name: string
+              p_currency?: string
+              p_full_name: string
+            }
+            Returns: undefined
+          }
     }
     Enums: {
       [_ in never]: never
