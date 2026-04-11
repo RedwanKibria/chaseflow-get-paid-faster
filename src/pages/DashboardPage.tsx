@@ -1,9 +1,10 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useApp } from '@/context/AppContext';
 import DashboardLayout from '@/layouts/DashboardLayout';
-import { FileText, AlertTriangle, Clock, DollarSign, Check, Download, XCircle } from 'lucide-react';
+import { FileText, AlertTriangle, Clock, DollarSign, Check, Download, XCircle, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { downloadInvoicePdf } from '@/lib/invoiceStorage';
 
 const statusBadge = (status: string) => {
@@ -19,8 +20,12 @@ const statusBadge = (status: string) => {
 };
 
 export default function DashboardPage() {
-  const { invoices, markAsPaid, cancelInvoice, addLog } = useApp();
+  const { invoices, markAsPaid, cancelInvoice, softDeleteInvoice, addLog, user } = useApp();
   const activeInvoices = useMemo(() => invoices.filter(i => !i.is_deleted), [invoices]);
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  const currency = (user as any)?.currency || 'GBP';
+  const currencySymbol = getCurrencySymbol(currency);
 
   const stats = useMemo(() => {
     const total = activeInvoices.length;
@@ -34,12 +39,19 @@ export default function DashboardPage() {
     { label: 'Total Invoices', value: stats.total, icon: FileText, color: 'text-primary' },
     { label: 'Overdue', value: stats.overdue, icon: AlertTriangle, color: 'text-destructive' },
     { label: 'Due Soon', value: stats.dueSoon, icon: Clock, color: 'text-warning' },
-    { label: 'Outstanding', value: `£${stats.outstanding.toLocaleString()}`, icon: DollarSign, color: 'text-success' },
+    { label: 'Outstanding', value: `${currencySymbol}${stats.outstanding.toLocaleString()}`, icon: DollarSign, color: 'text-success' },
   ];
 
   const handleDownload = async (inv: typeof activeInvoices[number]) => {
     await downloadInvoicePdf(inv);
     addLog({ invoice_id: inv.id, action_type: 'invoice_downloaded', description: `Invoice ${inv.invoice_code} downloaded` });
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteTarget) {
+      await softDeleteInvoice(deleteTarget);
+      setDeleteTarget(null);
+    }
   };
 
   return (
@@ -83,7 +95,7 @@ export default function DashboardPage() {
                     <td className="p-3 font-medium text-foreground">{inv.invoice_code}</td>
                     <td className="p-3 text-foreground">{inv.client_name}</td>
                     <td className="p-3 text-muted-foreground">{inv.client_company}</td>
-                    <td className="p-3 text-right font-medium text-foreground">£{inv.total_amount.toLocaleString()}</td>
+                    <td className="p-3 text-right font-medium text-foreground">{currencySymbol}{inv.total_amount.toLocaleString()}</td>
                     <td className="p-3 text-muted-foreground">{inv.due_date}</td>
                     <td className="p-3">{statusBadge(inv.status)}</td>
                     <td className="p-3 text-right">
@@ -101,6 +113,9 @@ export default function DashboardPage() {
                         <Button size="sm" variant="ghost" onClick={() => handleDownload(inv)} className="h-8 text-xs">
                           <Download className="h-3 w-3" />
                         </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(inv.id)} className="h-8 text-xs text-destructive">
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
                       </div>
                     </td>
                   </tr>
@@ -110,6 +125,35 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Invoice</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this invoice? This action cannot be undone.</p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>Confirm Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
+
+function getCurrencySymbol(code: string): string {
+  const map: Record<string, string> = {
+    GBP: '£', USD: '$', EUR: '€', JPY: '¥', CNY: '¥', INR: '₹', AUD: 'A$', CAD: 'C$',
+    CHF: 'CHF', KRW: '₩', BRL: 'R$', ZAR: 'R', SEK: 'kr', NOK: 'kr', DKK: 'kr',
+    SGD: 'S$', HKD: 'HK$', NZD: 'NZ$', MXN: 'MX$', RUB: '₽', TRY: '₺', PLN: 'zł',
+    THB: '฿', MYR: 'RM', IDR: 'Rp', PHP: '₱', VND: '₫', BDT: '৳', PKR: '₨',
+    EGP: 'E£', NGN: '₦', KES: 'KSh', GHS: 'GH₵', AED: 'د.إ', SAR: '﷼', QAR: 'QR',
+    KWD: 'KD', BHD: 'BD', OMR: 'OMR', JOD: 'JD', ILS: '₪', CZK: 'Kč', HUF: 'Ft',
+    RON: 'lei', BGN: 'лв', HRK: 'kn', ISK: 'kr', TWD: 'NT$', CLP: 'CL$', COP: 'COL$',
+    PEN: 'S/.', ARS: 'AR$', UAH: '₴',
+  };
+  return map[code] || code + ' ';
+}
+
+export { getCurrencySymbol };

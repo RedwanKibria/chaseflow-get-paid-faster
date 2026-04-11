@@ -5,8 +5,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Check, Download, Search, XCircle, Trash2, CheckCircle2, X } from 'lucide-react';
 import { downloadInvoicePdf } from '@/lib/invoiceStorage';
+import { getCurrencySymbol } from '@/pages/DashboardPage';
 
 const statusBadge = (status: string) => {
   const map: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
@@ -24,13 +26,17 @@ const SentIcon = ({ sent }: { sent: boolean }) =>
   sent ? <CheckCircle2 className="h-4 w-4 text-green-600" /> : <X className="h-4 w-4 text-muted-foreground/40" />;
 
 export default function MyInvoicesPage() {
-  const { invoices, markAsPaid, cancelInvoice, softDeleteInvoice, addLog } = useApp();
+  const { invoices, markAsPaid, cancelInvoice, softDeleteInvoice, addLog, user } = useApp();
   const [filterName, setFilterName] = useState('');
   const [filterCompany, setFilterCompany] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+
+  const currency = (user as any)?.currency || 'GBP';
+  const currencySymbol = getCurrencySymbol(currency);
 
   const filtered = useMemo(() => {
     return invoices.filter(inv => {
@@ -68,6 +74,13 @@ export default function MyInvoicesPage() {
     }
   };
 
+  const handleConfirmDelete = async () => {
+    if (deleteTarget) {
+      await softDeleteInvoice(deleteTarget);
+      setDeleteTarget(null);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="animate-fade-in">
@@ -83,7 +96,6 @@ export default function MyInvoicesPage() {
           )}
         </div>
 
-        {/* Filters */}
         <div className="bg-card rounded-xl p-5 shadow-card mb-6">
           <div className="flex flex-wrap gap-4">
             <div className="flex-1 min-w-[180px] relative">
@@ -113,7 +125,6 @@ export default function MyInvoicesPage() {
           </div>
         </div>
 
-        {/* Table */}
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -145,7 +156,7 @@ export default function MyInvoicesPage() {
                     <td className="p-3 text-foreground">{inv.client_name}</td>
                     <td className="p-3 text-muted-foreground">{inv.client_company}</td>
                     <td className="p-3 text-muted-foreground">{inv.client_email}</td>
-                    <td className="p-3 text-right font-medium text-foreground">£{inv.total_amount.toLocaleString()}</td>
+                    <td className="p-3 text-right font-medium text-foreground">{currencySymbol}{inv.total_amount.toLocaleString()}</td>
                     <td className="p-3 text-muted-foreground">{inv.due_date}</td>
                     <td className="p-3">{statusBadge(inv.status)}</td>
                     <td className="p-3 text-center"><SentIcon sent={inv.before_3_sent} /></td>
@@ -168,7 +179,7 @@ export default function MyInvoicesPage() {
                         <Button size="sm" variant="ghost" onClick={() => handleDownload(inv)} className="h-7 text-xs">
                           <Download className="h-3 w-3" />
                         </Button>
-                        <Button size="sm" variant="ghost" onClick={() => softDeleteInvoice(inv.id)} className="h-7 text-xs text-destructive">
+                        <Button size="sm" variant="ghost" onClick={() => setDeleteTarget(inv.id)} className="h-7 text-xs text-destructive">
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </div>
@@ -183,6 +194,19 @@ export default function MyInvoicesPage() {
           )}
         </div>
       </div>
+
+      <Dialog open={!!deleteTarget} onOpenChange={() => setDeleteTarget(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Delete Invoice</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">Are you sure you want to delete this invoice? This action cannot be undone.</p>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setDeleteTarget(null)}>Cancel</Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>Confirm Delete</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DashboardLayout>
   );
 }
