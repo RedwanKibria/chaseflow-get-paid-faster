@@ -176,10 +176,10 @@ export default function AdminInvoiceReportsPage() {
                     <td className="p-3 text-foreground">{r.client_name}</td>
                     <td className="p-3 text-muted-foreground">{r.client_company || '—'}</td>
                     <td className="p-3 text-muted-foreground">{r.due_date}</td>
-                    <td className="p-3 text-right text-foreground">£{(r.subtotal_amount ?? 0).toLocaleString()}</td>
+                    <td className="p-3 text-right text-foreground">{(r.subtotal_amount ?? 0).toLocaleString()}</td>
                     <td className="p-3 text-right text-muted-foreground">{r.vat_percent ? `${r.vat_percent}%` : '—'}</td>
                     <td className="p-3 text-right text-muted-foreground">{r.tax_percent ? `${r.tax_percent}%` : '—'}</td>
-                    <td className="p-3 text-right font-medium text-foreground">£{(r.total_amount ?? 0).toLocaleString()}</td>
+                    <td className="p-3 text-right font-medium text-foreground">{(r.total_amount ?? 0).toLocaleString()}</td>
                     <td className="p-3">{statusBadge(r.status)}</td>
                     <td className="p-3 text-muted-foreground text-xs">{r.owner_full_name || r.owner_email || '—'}</td>
                     <td className="p-3 text-center"><SentIcon sent={r.before_3_sent} /></td>

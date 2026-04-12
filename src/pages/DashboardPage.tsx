@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { downloadInvoicePdf } from '@/lib/invoiceStorage';
+import { getCurrencySymbol } from '@/lib/currency';
 
 const statusBadge = (status: string) => {
   const map: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
@@ -43,7 +44,7 @@ export default function DashboardPage() {
   ];
 
   const handleDownload = async (inv: typeof activeInvoices[number]) => {
-    await downloadInvoicePdf(inv);
+    await downloadInvoicePdf(inv, currencySymbol);
     addLog({ invoice_id: inv.id, action_type: 'invoice_downloaded', description: `Invoice ${inv.invoice_code} downloaded` });
   };
 
@@ -141,19 +142,3 @@ export default function DashboardPage() {
     </DashboardLayout>
   );
 }
-
-function getCurrencySymbol(code: string): string {
-  const map: Record<string, string> = {
-    GBP: '£', USD: '$', EUR: '€', JPY: '¥', CNY: '¥', INR: '₹', AUD: 'A$', CAD: 'C$',
-    CHF: 'CHF', KRW: '₩', BRL: 'R$', ZAR: 'R', SEK: 'kr', NOK: 'kr', DKK: 'kr',
-    SGD: 'S$', HKD: 'HK$', NZD: 'NZ$', MXN: 'MX$', RUB: '₽', TRY: '₺', PLN: 'zł',
-    THB: '฿', MYR: 'RM', IDR: 'Rp', PHP: '₱', VND: '₫', BDT: '৳', PKR: '₨',
-    EGP: 'E£', NGN: '₦', KES: 'KSh', GHS: 'GH₵', AED: 'د.إ', SAR: '﷼', QAR: 'QR',
-    KWD: 'KD', BHD: 'BD', OMR: 'OMR', JOD: 'JD', ILS: '₪', CZK: 'Kč', HUF: 'Ft',
-    RON: 'lei', BGN: 'лв', HRK: 'kn', ISK: 'kr', TWD: 'NT$', CLP: 'CL$', COP: 'COL$',
-    PEN: 'S/.', ARS: 'AR$', UAH: '₴',
-  };
-  return map[code] || code + ' ';
-}
-
-export { getCurrencySymbol };

@@ -2,13 +2,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { generateInvoicePdf } from './generateInvoicePdf';
 import type { Invoice } from '@/types';
 
-/**
- * Generate PDF for an invoice and upload to Supabase Storage.
- * Returns the file path and name or null on failure.
- */
-export async function generateAndUploadInvoicePdf(invoice: Invoice): Promise<{ path: string; name: string } | null> {
+export async function generateAndUploadInvoicePdf(invoice: Invoice, currencySymbol: string = '£'): Promise<{ path: string; name: string } | null> {
   try {
-    // Use jspdf to generate PDF as blob
     const { default: jsPDF } = await import('jspdf');
     const { default: autoTable } = await import('jspdf-autotable');
 
@@ -17,7 +12,6 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice): Promise<{ p
     const margin = 20;
     let y = 20;
 
-    // Header
     doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
     doc.text('INVOICE', pageWidth - margin, y + 2, { align: 'right' });
@@ -36,7 +30,6 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice): Promise<{ p
     doc.line(margin, y, pageWidth - margin, y);
     y += 10;
 
-    // Bill To / Details
     doc.setTextColor(130, 130, 130);
     doc.setFontSize(8);
     doc.text('BILL TO', margin, y);
@@ -71,11 +64,10 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice): Promise<{ p
     }
     y += 10;
 
-    // Items
     const isHourly = invoice.invoice_type === 'hourly';
     autoTable(doc, {
       startY: y,
-      head: [['#', 'Description', isHourly ? 'Hours' : 'Qty', isHourly ? 'Rate (£)' : 'Price (£)', 'Total (£)']],
+      head: [['#', 'Description', isHourly ? 'Hours' : 'Qty', isHourly ? `Rate (${currencySymbol})` : `Price (${currencySymbol})`, `Total (${currencySymbol})`]],
       body: invoice.items.map((item, idx) => [
         String(idx + 1),
         item.description || '—',
@@ -92,20 +84,19 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice): Promise<{ p
 
     y = (doc as any).lastAutoTable.finalY + 10;
 
-    // Totals
     const totalsX = pageWidth - margin;
     doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
     doc.text('Subtotal:', totalsX - 40, y);
     doc.setTextColor(40, 40, 40);
-    doc.text(`£${invoice.subtotal_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
+    doc.text(`${currencySymbol}${invoice.subtotal_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
     y += 6;
 
     if (invoice.vat_percent > 0) {
       doc.setTextColor(100, 100, 100);
       doc.text(`VAT (${invoice.vat_percent}%):`, totalsX - 40, y);
       doc.setTextColor(40, 40, 40);
-      doc.text(`£${invoice.vat_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
+      doc.text(`${currencySymbol}${invoice.vat_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
       y += 6;
     }
 
@@ -113,7 +104,7 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice): Promise<{ p
       doc.setTextColor(100, 100, 100);
       doc.text(`TAX (${invoice.tax_percent}%):`, totalsX - 40, y);
       doc.setTextColor(40, 40, 40);
-      doc.text(`£${invoice.tax_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
+      doc.text(`${currencySymbol}${invoice.tax_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
       y += 6;
     }
 
@@ -123,9 +114,8 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice): Promise<{ p
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
     doc.setTextColor(20, 20, 20);
-    doc.text(`£${invoice.total_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
+    doc.text(`${currencySymbol}${invoice.total_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
 
-    // Watermark
     if (invoice.status === 'paid' || invoice.status === 'cancelled') {
       doc.setFontSize(48);
       doc.setFont('helvetica', 'bold');
@@ -137,31 +127,20 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice): Promise<{ p
       doc.text(invoice.status.toUpperCase(), pageWidth / 2, 140, { align: 'center', angle: 35 });
     }
 
-    // Convert to blob and upload
     const pdfBlob = doc.output('blob');
     const fileName = `${invoice.invoice_code || invoice.id}.pdf`;
     const filePath = `${invoice.user_id}/${fileName}`;
 
     const { error: uploadError } = await supabase.storage
       .from('invoice-files')
-      .upload(filePath, pdfBlob, {
-        contentType: 'application/pdf',
-        upsert: true,
-      });
+      .upload(filePath, pdfBlob, { contentType: 'application/pdf', upsert: true });
 
     if (uploadError) {
       console.error('Upload error:', uploadError);
       return null;
     }
 
-    // Update invoice record with file info
-    await supabase
-      .from('invoices')
-      .update({
-        invoice_file_path: filePath,
-        invoice_file_name: fileName,
-      })
-      .eq('id', invoice.id);
+    await supabase.from('invoices').update({ invoice_file_path: filePath, invoice_file_name: fileName }).eq('id', invoice.id);
 
     return { path: filePath, name: fileName };
   } catch (err) {
@@ -170,16 +149,9 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice): Promise<{ p
   }
 }
 
-/**
- * Download an invoice PDF - from storage if available, otherwise generate client-side
- */
-export async function downloadInvoicePdf(invoice: Invoice) {
+export async function downloadInvoicePdf(invoice: Invoice, currencySymbol: string = '£') {
   if (invoice.invoice_file_path) {
-    // Try downloading from storage first
-    const { data, error } = await supabase.storage
-      .from('invoice-files')
-      .download(invoice.invoice_file_path);
-
+    const { data, error } = await supabase.storage.from('invoice-files').download(invoice.invoice_file_path);
     if (!error && data) {
       const url = URL.createObjectURL(data);
       const a = document.createElement('a');
@@ -192,7 +164,5 @@ export async function downloadInvoicePdf(invoice: Invoice) {
       return;
     }
   }
-
-  // Fallback: generate client-side
-  generateInvoicePdf(invoice);
+  generateInvoicePdf(invoice, currencySymbol);
 }
