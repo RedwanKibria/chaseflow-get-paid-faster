@@ -44,7 +44,7 @@ export default function DashboardPage() {
   ];
 
   const handleDownload = async (inv: typeof activeInvoices[number]) => {
-    await downloadInvoicePdf(inv);
+    await downloadInvoicePdf(inv, currencySymbol);
     addLog({ invoice_id: inv.id, action_type: 'invoice_downloaded', description: `Invoice ${inv.invoice_code} downloaded` });
   };
 

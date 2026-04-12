@@ -143,7 +143,7 @@ export default function ReviewFeedbackPage() {
           <div className="space-y-4">
             {questions.map(q => (
               <div key={q.id} className="bg-card rounded-xl p-5 shadow-card">
-                <p className="text-sm font-medium text-foreground mb-2">Q{q.question_order}. {q.question_text}</p>
+                <p className="text-sm font-medium text-foreground mb-2">Q{idx + 1}. {q.question_text}</p>
                 <p className="text-sm text-muted-foreground bg-muted/40 rounded-lg px-3 py-2">
                   {getAnswerDisplay(q)}
                 </p>
