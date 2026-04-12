@@ -4,7 +4,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/context/AppContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Download, FileSpreadsheet, Eye } from 'lucide-react';
@@ -80,7 +79,6 @@ export default function AdminSurveyReportsPage() {
   const getDetailAnswer = (q: SurveyQuestion): string => {
     const a = detailAnswers.find(da => da.survey_question_id === q.id);
     if (!a) {
-      // Fallback to view data
       if (q.question_key === 'q1_satisfaction') return viewRow?.q1_satisfaction !== null && viewRow?.q1_satisfaction !== undefined ? `${viewRow.q1_satisfaction} / 5` : 'Not answered';
       if (q.question_key === 'q2_satisfaction') return viewRow?.q2_satisfaction !== null && viewRow?.q2_satisfaction !== undefined ? `${viewRow.q2_satisfaction} / 5` : 'Not answered';
       if (q.question_key === 'q3_satisfaction') return viewRow?.q3_satisfaction !== null && viewRow?.q3_satisfaction !== undefined ? `${viewRow.q3_satisfaction} / 5` : 'Not answered';
@@ -104,19 +102,26 @@ export default function AdminSurveyReportsPage() {
     );
   }, [rows, search]);
 
+  // Use full question text as column headers in export
   const exportData = useMemo(() => {
-    return filtered.map(r => ({
-      'Name': r.full_name ?? '',
-      'Email': r.email ?? '',
-      'Company': r.company_name ?? '',
-      'Q1 Satisfaction': r.q1_satisfaction ?? '',
-      'Q2 Satisfaction': r.q2_satisfaction ?? '',
-      'Q3 Satisfaction': r.q3_satisfaction ?? '',
-      'Would Pay Pro': r.q4_pay_pro === null ? '' : r.q4_pay_pro ? 'Yes' : 'No',
-      'Comment': r.q5_comment ?? '',
-      'Submitted': r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '',
-    }));
-  }, [filtered]);
+    return filtered.map(r => {
+      const row: Record<string, any> = {
+        'Name': r.full_name ?? '',
+        'Email': r.email ?? '',
+        'Company': r.company_name ?? '',
+      };
+      // Map question columns using full question text
+      questions.forEach(q => {
+        if (q.question_key === 'q1_satisfaction') row[q.question_text] = r.q1_satisfaction ?? '';
+        else if (q.question_key === 'q2_satisfaction') row[q.question_text] = r.q2_satisfaction ?? '';
+        else if (q.question_key === 'q3_satisfaction') row[q.question_text] = r.q3_satisfaction ?? '';
+        else if (q.question_key === 'q4_pay_pro') row[q.question_text] = r.q4_pay_pro === null ? '' : r.q4_pay_pro ? 'Yes' : 'No';
+        else if (q.question_key === 'q5_comment') row[q.question_text] = r.q5_comment ?? '';
+      });
+      row['Submitted'] = r.submitted_at ? new Date(r.submitted_at).toLocaleDateString() : '';
+      return row;
+    });
+  }, [filtered, questions]);
 
   if (!isAdmin) {
     return (
@@ -205,9 +210,9 @@ export default function AdminSurveyReportsPage() {
                     {loadingDetail ? (
                       <div className="text-center text-muted-foreground py-4">Loading answers...</div>
                     ) : (
-                      questions.map(q => (
+                      questions.map((q, idx) => (
                         <div key={q.id} className="bg-muted/30 rounded-lg p-4">
-                          <p className="text-sm font-medium text-foreground mb-1">Q{q.question_order}. {q.question_text}</p>
+                          <p className="text-sm font-medium text-foreground mb-1">Q{idx + 1}. {q.question_text}</p>
                           <p className="text-sm text-muted-foreground">{getDetailAnswer(q)}</p>
                         </div>
                       ))
