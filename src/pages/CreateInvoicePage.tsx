@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useApp } from '@/context/AppContext';
+import { getCurrencySymbol } from '@/lib/currency';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -14,6 +15,7 @@ interface CreateInvoiceProps {
 
 export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
   const { addInvoice, user } = useApp();
+  const cs = getCurrencySymbol(user?.currency || 'GBP');
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
   const [clientCompany, setClientCompany] = useState('');
@@ -40,8 +42,8 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
   const total = subtotal + vatAmount + taxAmount;
 
   const defaultReminder = useMemo(() => {
-    return `Dear ${clientName || '[Client Name]'},\n\nThis is a friendly reminder regarding your invoice${reference ? ` (ref: ${reference})` : ''} for £${total.toLocaleString()}.\n\nPlease arrange payment at your earliest convenience.\n\nKind regards,\n${user?.full_name || 'Your Name'}`;
-  }, [clientName, reference, total, user]);
+    return `Dear ${clientName || '[Client Name]'},\n\nThis is a friendly reminder regarding your invoice${reference ? ` (ref: ${reference})` : ''} for ${cs}${total.toLocaleString()}.\n\nPlease arrange payment at your earliest convenience.\n\nKind regards,\n${user?.full_name || 'Your Name'}`;
+  }, [clientName, reference, total, user, cs]);
 
   const [emailBody, setEmailBody] = useState('');
   const displayEmail = emailBody || defaultReminder;
