@@ -197,7 +197,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                       </>
                     )}
                     <div className="w-24 pb-0.5 text-right text-sm font-medium text-foreground">
-                      ${cs}{(isHourly ? item.hours * item.rate : item.qty * item.amount).toLocaleString()}
+                      {cs}{(isHourly ? item.hours * item.rate : item.qty * item.amount).toLocaleString()}
                     </div>
                     <Button variant="ghost" size="sm" onClick={() => removeItem(idx)} disabled={items.length === 1} className="pb-0.5">
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -208,20 +208,20 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               <div className="mt-4 pt-4 border-t border-border space-y-1">
                 <div className="flex items-center justify-between">
                   <Button variant="outline" size="sm" onClick={addItem}><Plus className="h-3 w-3 mr-1" /> Add Item</Button>
-                  <span className="text-sm text-muted-foreground">Subtotal: ${cs}{subtotal.toLocaleString()}</span>
+                  <span className="text-sm text-muted-foreground">Subtotal: {cs}{subtotal.toLocaleString()}</span>
                 </div>
                 {vatPercent > 0 && (
                   <div className="flex justify-end text-sm text-muted-foreground">
-                    VAT ({vatPercent}%): ${cs}{vatAmount.toLocaleString()}
+                    VAT ({vatPercent}%): {cs}{vatAmount.toLocaleString()}
                   </div>
                 )}
                 {taxPercent > 0 && (
                   <div className="flex justify-end text-sm text-muted-foreground">
-                    TAX ({taxPercent}%): ${cs}{taxAmount.toLocaleString()}
+                    TAX ({taxPercent}%): {cs}{taxAmount.toLocaleString()}
                   </div>
                 )}
                 <div className="flex justify-end">
-                  <span className="text-lg font-bold text-foreground">Total: ${cs}{total.toLocaleString()}</span>
+                  <span className="text-lg font-bold text-foreground">Total: {cs}{total.toLocaleString()}</span>
                 </div>
               </div>
             </div>
@@ -320,22 +320,22 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                     <td className="py-2 text-muted-foreground">{idx + 1}</td>
                     <td className="py-2 text-foreground">{item.description || '—'}</td>
                     <td className="py-2 text-right text-foreground">{isHourly ? item.hours : item.qty}</td>
-                    <td className="py-2 text-right text-foreground">${cs}{isHourly ? item.rate : item.amount}</td>
-                    <td className="py-2 text-right font-medium text-foreground">${cs}{(isHourly ? item.hours * item.rate : item.qty * item.amount).toLocaleString()}</td>
+                    <td className="py-2 text-right text-foreground">{cs}{isHourly ? item.rate : item.amount}</td>
+                    <td className="py-2 text-right font-medium text-foreground">{cs}{(isHourly ? item.hours * item.rate : item.qty * item.amount).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <div className="flex justify-end">
               <div className="text-right space-y-1">
-                <p className="text-sm text-muted-foreground">Subtotal: <span className="text-foreground font-medium">${cs}{subtotal.toLocaleString()}</span></p>
+                <p className="text-sm text-muted-foreground">Subtotal: <span className="text-foreground font-medium">{cs}{subtotal.toLocaleString()}</span></p>
                 {vatPercent > 0 && (
-                  <p className="text-sm text-muted-foreground">VAT ({vatPercent}%): <span className="text-foreground font-medium">${cs}{vatAmount.toLocaleString()}</span></p>
+                  <p className="text-sm text-muted-foreground">VAT ({vatPercent}%): <span className="text-foreground font-medium">{cs}{vatAmount.toLocaleString()}</span></p>
                 )}
                 {taxPercent > 0 && (
-                  <p className="text-sm text-muted-foreground">TAX ({taxPercent}%): <span className="text-foreground font-medium">${cs}{taxAmount.toLocaleString()}</span></p>
+                  <p className="text-sm text-muted-foreground">TAX ({taxPercent}%): <span className="text-foreground font-medium">{cs}{taxAmount.toLocaleString()}</span></p>
                 )}
-                <p className="text-3xl font-bold text-foreground">${cs}{total.toLocaleString()}</p>
+                <p className="text-3xl font-bold text-foreground">{cs}{total.toLocaleString()}</p>
               </div>
             </div>
             <div className="mt-8 pt-6 border-t border-border text-xs text-muted-foreground space-y-1">
