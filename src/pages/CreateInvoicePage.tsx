@@ -180,7 +180,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                           <Input type="number" value={item.hours || ''} onChange={e => updateItem(idx, 'hours', +e.target.value)} />
                         </div>
                         <div className="w-24 space-y-1">
-                          <Label className="text-xs">Rate (£)</Label>
+                          <Label className="text-xs">Rate</Label>
                           <Input type="number" value={item.rate || ''} onChange={e => updateItem(idx, 'rate', +e.target.value)} />
                         </div>
                       </>
@@ -191,7 +191,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                           <Input type="number" value={item.qty || ''} onChange={e => updateItem(idx, 'qty', +e.target.value)} />
                         </div>
                         <div className="w-24 space-y-1">
-                          <Label className="text-xs">Amount (£)</Label>
+                          <Label className="text-xs">Amount</Label>
                           <Input type="number" value={item.amount || ''} onChange={e => updateItem(idx, 'amount', +e.target.value)} />
                         </div>
                       </>
