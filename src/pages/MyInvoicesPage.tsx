@@ -6,9 +6,10 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
-import { Check, Download, Search, XCircle, Trash2, CheckCircle2, X } from 'lucide-react';
+import { Check, Download, Search, XCircle, Trash2, CheckCircle2, X, FileSpreadsheet } from 'lucide-react';
 import { downloadInvoicePdf } from '@/lib/invoiceStorage';
-import { getCurrencySymbol } from '@/pages/DashboardPage';
+import { getCurrencySymbol } from '@/lib/currency';
+import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
 
 const statusBadge = (status: string) => {
   const map: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
@@ -58,21 +59,33 @@ export default function MyInvoicesPage() {
     });
   };
 
-  const toggleAll = () => {
-    if (selected.size === filtered.length) setSelected(new Set());
-    else setSelected(new Set(filtered.map(i => i.id)));
-  };
-
   const handleDownload = async (inv: typeof filtered[number]) => {
     await downloadInvoicePdf(inv);
     addLog({ invoice_id: inv.id, action_type: 'invoice_downloaded', description: `Invoice ${inv.invoice_code} downloaded` });
   };
 
-  const handleBulkDownload = async () => {
-    for (const inv of filtered.filter(i => selected.has(i.id))) {
-      await handleDownload(inv);
-    }
-  };
+  const selectedInvoices = useMemo(() => filtered.filter(i => selected.has(i.id)), [filtered, selected]);
+
+  const bulkExportData = useMemo(() => {
+    return selectedInvoices.map(inv => ({
+      'Invoice Code': inv.invoice_code,
+      'Type': inv.invoice_type,
+      'Client': inv.client_name,
+      'Client Email': inv.client_email,
+      'Company': inv.client_company,
+      'Your Company': inv.your_company_name ?? '',
+      'Invoice Date': inv.invoice_date,
+      'Due Date': inv.due_date,
+      'Subtotal': inv.subtotal_amount,
+      'VAT %': inv.vat_percent,
+      'VAT Amount': inv.vat_amount,
+      'TAX %': inv.tax_percent,
+      'TAX Amount': inv.tax_amount,
+      'Total': inv.total_amount,
+      'Status': inv.status,
+      'Paid': inv.paid ? 'Yes' : 'No',
+    }));
+  }, [selectedInvoices]);
 
   const handleConfirmDelete = async () => {
     if (deleteTarget) {
@@ -90,9 +103,14 @@ export default function MyInvoicesPage() {
             <p className="text-muted-foreground">Manage and track all your invoices</p>
           </div>
           {selected.size > 0 && (
-            <Button variant="outline" onClick={handleBulkDownload}>
-              <Download className="h-4 w-4 mr-2" /> Download ({selected.size})
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => downloadCsv(bulkExportData, 'invoices-export')}>
+                <Download className="h-4 w-4 mr-1" /> CSV ({selected.size})
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => downloadExcel(bulkExportData, 'invoices-export')}>
+                <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel ({selected.size})
+              </Button>
+            </div>
           )}
         </div>
 
@@ -130,9 +148,7 @@ export default function MyInvoicesPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-muted/50">
-                  <th className="p-3 w-10">
-                    <Checkbox checked={selected.size === filtered.length && filtered.length > 0} onCheckedChange={toggleAll} />
-                  </th>
+                  <th className="p-3 w-10"></th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Invoice ID</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Client</th>
                   <th className="text-left p-3 font-medium text-muted-foreground">Company</th>
