@@ -52,10 +52,10 @@ export default function ProPlanPage() {
             <Crown className="h-12 w-12 text-primary-foreground mx-auto mb-4 opacity-90" />
             <h2 className="text-2xl font-bold text-primary-foreground mb-2">Upgrade to Pro</h2>
             <p className="text-primary-foreground/80 mb-6 max-w-md mx-auto">
-              Get unlimited invoices, branded templates, and automated reminders for £19/month.
+              Get unlimited invoices, branded templates, and automated reminders for £12/month.
             </p>
             <div className="flex items-center justify-center gap-3">
-              <Button variant="secondary" size="lg" onClick={handleUpgradeClick}>Upgrade Now — £19/mo</Button>
+              <Button variant="secondary" size="lg" onClick={handleUpgradeClick}>Upgrade Now — £12/mo</Button>
               <Button variant="ghost" size="lg" onClick={enterProDemo} className="text-primary-foreground border-primary-foreground/30 border hover:bg-primary-foreground/10">
                 Try Demo
               </Button>

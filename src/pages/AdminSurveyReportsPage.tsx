@@ -192,13 +192,13 @@ export default function AdminSurveyReportsPage() {
         </div>
 
         <Dialog open={!!viewRow} onOpenChange={() => setViewRow(null)}>
-          <DialogContent className="max-w-lg max-h-[80vh] flex flex-col">
-            <DialogHeader>
+          <DialogContent className="max-w-lg max-h-[85vh] flex flex-col p-0 gap-0">
+            <DialogHeader className="p-6 pb-3 border-b border-border shrink-0">
               <DialogTitle>Survey Response — {viewRow?.full_name || viewRow?.email || 'User'}</DialogTitle>
             </DialogHeader>
-            <ScrollArea className="flex-1 pr-4">
+            <div className="flex-1 overflow-y-auto px-6 py-4">
               {viewRow && (
-                <div className="space-y-4 pt-2 pb-4">
+                <div className="space-y-4">
                   <div className="text-sm text-muted-foreground">
                     <span className="font-medium text-foreground">Email:</span> {viewRow.email || '—'}
                   </div>
@@ -220,7 +220,7 @@ export default function AdminSurveyReportsPage() {
                   </div>
                 </div>
               )}
-            </ScrollArea>
+            </div>
           </DialogContent>
         </Dialog>
       </div>
