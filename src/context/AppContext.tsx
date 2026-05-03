@@ -290,7 +290,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
 
     await refreshInvoices();
-  }, [session, addLog, refreshInvoices]);
+
+    // Generate and upload PDF for attachment in reminder emails
+    try {
+      const { data: full } = await supabase.from('invoices').select('*, items:invoice_items(*)').eq('id', inserted.id).single();
+      if (full) {
+        const symbol = getCurrencySymbol(user?.currency || 'GBP');
+        await generateAndUploadInvoicePdf(full as any, symbol);
+      }
+    } catch (e) { console.warn('PDF upload skipped:', e); }
+  }, [session, addLog, refreshInvoices, user]);
 
   const updateInvoice = useCallback(async (inv: Invoice) => {
     await supabase
