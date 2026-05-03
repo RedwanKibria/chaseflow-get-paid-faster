@@ -151,8 +151,11 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const { subject, html } = buildEmailBody(invoice, job.reminder_type);
-        const send = await sendViaResend(invoice.client_email, subject, html);
+        const { subject, html, text } = buildEmailBody(invoice, job.reminder_type);
+        const { data: senderProfile } = await supabase.from("users_profile").select("email").eq("id", invoice.user_id).maybeSingle();
+        const replyTo = senderProfile?.email ?? null;
+        const attachment = await fetchInvoiceAttachment(supabase, invoice);
+        const send = await sendViaResend(invoice.client_email, replyTo, subject, html, text, attachment);
 
         const sentFieldMap: Record<string, string> = {
           before_3: "before_3_sent", due: "due_sent",
