@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Invoice, ActivityLog, User, UserAccess, UserPagePermissions } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { generateAndUploadInvoicePdf } from '@/lib/invoiceStorage';
+import { getCurrencySymbol } from '@/lib/currency';
 import type { Session } from '@supabase/supabase-js';
 
 interface AppContextType {
@@ -288,7 +290,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
 
     await refreshInvoices();
-  }, [session, addLog, refreshInvoices]);
+
+    // Generate and upload PDF for attachment in reminder emails
+    try {
+      const { data: full } = await supabase.from('invoices').select('*, items:invoice_items(*)').eq('id', inserted.id).single();
+      if (full) {
+        const symbol = getCurrencySymbol(user?.currency || 'GBP');
+        await generateAndUploadInvoicePdf(full as any, symbol);
+      }
+    } catch (e) { console.warn('PDF upload skipped:', e); }
+  }, [session, addLog, refreshInvoices, user]);
 
   const updateInvoice = useCallback(async (inv: Invoice) => {
     await supabase
@@ -319,7 +330,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
 
     await refreshInvoices();
-  }, [addLog, refreshInvoices]);
+
+    // Regenerate PDF on edit so attachment stays current
+    try {
+      const { data: full } = await supabase.from('invoices').select('*, items:invoice_items(*)').eq('id', inv.id).single();
+      if (full) {
+        const symbol = getCurrencySymbol(user?.currency || 'GBP');
+        await generateAndUploadInvoicePdf(full as any, symbol);
+      }
+    } catch (e) { console.warn('PDF regenerate skipped:', e); }
+  }, [addLog, refreshInvoices, user]);
 
   const markAsPaid = useCallback(async (id: string) => {
     const { error } = await supabase.rpc('mark_invoice_paid', { p_invoice_id: id });

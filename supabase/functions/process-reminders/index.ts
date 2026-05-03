@@ -13,6 +13,10 @@ function fmtMoney(n: number) {
   return Number(n ?? 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
+function escapeHtml(s: string) {
+  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+
 function buildEmailBody(invoice: any, reminderType: string) {
   const titleMap: Record<string, string> = {
     before_3: "Friendly reminder — payment due in 3 days",
@@ -24,41 +28,67 @@ function buildEmailBody(invoice: any, reminderType: string) {
   const heading = titleMap[reminderType] ?? "Payment reminder";
   const subject =
     invoice.reminder_email_subject ||
-    `${heading}: Invoice ${invoice.invoice_code}`;
+    `Invoice ${invoice.invoice_code} from ${invoice.your_company_name ?? "ChaseFlow"}`;
 
   const customBody = (invoice.email_body || "").trim();
+  const bodyHtml = customBody
+    ? escapeHtml(customBody).replace(/\n/g, "<br/>")
+    : `Hi ${escapeHtml(invoice.client_name ?? "there")},<br/><br/>This is a reminder that invoice <strong>${escapeHtml(invoice.invoice_code)}</strong> is ${reminderType === "before_3" ? "due in 3 days" : reminderType === "due" ? "due today" : "now overdue"}.`;
 
-  const html = `
-<!DOCTYPE html>
+  const html = `<!DOCTYPE html>
 <html><body style="margin:0;padding:0;background:#f6f7fb;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
   <div style="max-width:600px;margin:0 auto;padding:32px 16px;">
     <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:32px;">
       <h1 style="margin:0 0 8px;font-size:20px;color:#1d4ed8;">${heading}</h1>
-      <p style="margin:0 0 18px;font-size:13px;color:#64748b;">Invoice ${invoice.invoice_code}</p>
-      ${customBody
-        ? `<div style="font-size:14px;line-height:1.6;color:#334155;white-space:pre-wrap;margin-bottom:18px;">${customBody.replace(/[<>]/g, "")}</div>`
-        : `<p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 18px;">Hi ${invoice.client_name ?? "there"},<br/><br/>This is a reminder that invoice <strong>${invoice.invoice_code}</strong> is ${reminderType === "before_3" ? "due in 3 days" : reminderType === "due" ? "due today" : "now overdue"}.</p>`}
+      <p style="margin:0 0 18px;font-size:13px;color:#64748b;">Invoice ${escapeHtml(invoice.invoice_code)}</p>
+      <div style="font-size:14px;line-height:1.6;color:#334155;margin-bottom:18px;">${bodyHtml}</div>
       <table style="width:100%;border-collapse:collapse;font-size:14px;color:#334155;margin:0 0 18px;">
-        <tr><td style="padding:6px 0;"><strong>Reference</strong></td><td style="text-align:right;">${invoice.invoice_reference ?? "—"}</td></tr>
-        <tr><td style="padding:6px 0;"><strong>Invoice date</strong></td><td style="text-align:right;">${invoice.invoice_date ?? "—"}</td></tr>
-        <tr><td style="padding:6px 0;"><strong>Due date</strong></td><td style="text-align:right;">${invoice.due_date ?? "—"}</td></tr>
+        <tr><td style="padding:6px 0;"><strong>Reference</strong></td><td style="text-align:right;">${escapeHtml(invoice.invoice_reference ?? "—")}</td></tr>
+        <tr><td style="padding:6px 0;"><strong>Invoice date</strong></td><td style="text-align:right;">${escapeHtml(invoice.invoice_date ?? "—")}</td></tr>
+        <tr><td style="padding:6px 0;"><strong>Due date</strong></td><td style="text-align:right;">${escapeHtml(invoice.due_date ?? "—")}</td></tr>
         <tr><td style="padding:6px 0;border-top:1px solid #e5e7eb;"><strong>Total amount</strong></td><td style="text-align:right;border-top:1px solid #e5e7eb;font-weight:600;">${fmtMoney(invoice.total_amount)}</td></tr>
       </table>
-      <p style="font-size:13px;color:#64748b;margin:24px 0 0;">If you've already paid, please disregard this message. Thank you!</p>
-      <p style="font-size:12px;color:#94a3b8;margin:24px 0 0;">— ${invoice.your_company_name ?? "ChaseFlow"}</p>
+      <p style="font-size:12px;color:#94a3b8;margin:24px 0 0;">— ${escapeHtml(invoice.your_company_name ?? "ChaseFlow")}</p>
     </div>
   </div>
 </body></html>`.trim();
 
-  return { subject, html };
+  const text = `${heading}\nInvoice ${invoice.invoice_code}\n\n${customBody || `Hi ${invoice.client_name ?? "there"}, this is a reminder that invoice ${invoice.invoice_code} is ${reminderType === "due" ? "due today" : reminderType === "before_3" ? "due in 3 days" : "overdue"}.`}\n\nReference: ${invoice.invoice_reference ?? "-"}\nInvoice date: ${invoice.invoice_date ?? "-"}\nDue date: ${invoice.due_date ?? "-"}\nTotal: ${fmtMoney(invoice.total_amount)}\n\n— ${invoice.your_company_name ?? "ChaseFlow"}`;
+
+  return { subject, html, text };
 }
 
-async function sendViaResend(to: string, subject: string, html: string) {
+async function fetchInvoiceAttachment(supabase: any, invoice: any) {
+  if (!invoice.invoice_file_path) return null;
+  const { data, error } = await supabase.storage.from("invoice-files").download(invoice.invoice_file_path);
+  if (error || !data) return null;
+  const buf = new Uint8Array(await data.arrayBuffer());
+  let binary = "";
+  for (let i = 0; i < buf.length; i++) binary += String.fromCharCode(buf[i]);
+  const base64 = btoa(binary);
+  return { filename: invoice.invoice_file_name || `${invoice.invoice_code}.pdf`, content: base64 };
+}
+
+async function sendViaResend(to: string, replyTo: string | null, subject: string, html: string, text: string, attachment: any | null) {
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
   if (!LOVABLE_API_KEY || !RESEND_API_KEY) {
     return { ok: false, error: "Missing email API credentials" };
   }
+  const body: any = {
+    from: FROM_ADDRESS,
+    to: [to],
+    subject,
+    html,
+    text,
+    headers: {
+      "List-Unsubscribe": `<mailto:unsubscribe@chaseflow.online?subject=unsubscribe>`,
+      "List-Unsubscribe-Post": "List-Unsubscribe=One-Click",
+    },
+  };
+  if (replyTo) body.reply_to = replyTo;
+  if (attachment) body.attachments = [attachment];
+
   const res = await fetch(`${GATEWAY_URL}/emails`, {
     method: "POST",
     headers: {
@@ -66,7 +96,7 @@ async function sendViaResend(to: string, subject: string, html: string) {
       Authorization: `Bearer ${LOVABLE_API_KEY}`,
       "X-Connection-Api-Key": RESEND_API_KEY,
     },
-    body: JSON.stringify({ from: FROM_ADDRESS, to: [to], subject, html }),
+    body: JSON.stringify(body),
   });
   const data = await res.json().catch(() => ({}));
   if (!res.ok) return { ok: false, error: `Resend ${res.status}: ${JSON.stringify(data)}` };
@@ -121,8 +151,11 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        const { subject, html } = buildEmailBody(invoice, job.reminder_type);
-        const send = await sendViaResend(invoice.client_email, subject, html);
+        const { subject, html, text } = buildEmailBody(invoice, job.reminder_type);
+        const { data: senderProfile } = await supabase.from("users_profile").select("email").eq("id", invoice.user_id).maybeSingle();
+        const replyTo = senderProfile?.email ?? null;
+        const attachment = await fetchInvoiceAttachment(supabase, invoice);
+        const send = await sendViaResend(invoice.client_email, replyTo, subject, html, text, attachment);
 
         const sentFieldMap: Record<string, string> = {
           before_3: "before_3_sent", due: "due_sent",
