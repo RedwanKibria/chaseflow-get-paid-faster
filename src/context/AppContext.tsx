@@ -330,7 +330,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     });
 
     await refreshInvoices();
-  }, [addLog, refreshInvoices]);
+
+    // Regenerate PDF on edit so attachment stays current
+    try {
+      const { data: full } = await supabase.from('invoices').select('*, items:invoice_items(*)').eq('id', inv.id).single();
+      if (full) {
+        const symbol = getCurrencySymbol(user?.currency || 'GBP');
+        await generateAndUploadInvoicePdf(full as any, symbol);
+      }
+    } catch (e) { console.warn('PDF regenerate skipped:', e); }
+  }, [addLog, refreshInvoices, user]);
 
   const markAsPaid = useCallback(async (id: string) => {
     const { error } = await supabase.rpc('mark_invoice_paid', { p_invoice_id: id });
