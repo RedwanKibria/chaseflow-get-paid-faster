@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useCallback, useEffect, ReactNode } from 'react';
 import { Invoice, ActivityLog, User, UserAccess, UserPagePermissions } from '@/types';
 import { supabase } from '@/integrations/supabase/client';
+import { generateAndUploadInvoicePdf } from '@/lib/invoiceStorage';
+import { getCurrencySymbol } from '@/lib/currency';
 import type { Session } from '@supabase/supabase-js';
 
 interface AppContextType {
