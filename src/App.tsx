@@ -18,6 +18,7 @@ import AdminSystemLogsPage from "./pages/AdminSystemLogsPage";
 import AdminInvoiceReportsPage from "./pages/AdminInvoiceReportsPage";
 import ReviewFeedbackPage from "./pages/ReviewFeedbackPage";
 import AdminSurveyReportsPage from "./pages/AdminSurveyReportsPage";
+import EmailDeliveryReportPage from "./pages/EmailDeliveryReportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,8 @@ function AppRoutes() {
       <Route path="/admin/system-logs" element={<ProtectedRoute permKey="admin_system_logs"><AdminSystemLogsPage /></ProtectedRoute>} />
       <Route path="/admin/invoice-reports" element={<ProtectedRoute permKey="admin_invoice_reports"><AdminInvoiceReportsPage /></ProtectedRoute>} />
       <Route path="/admin/survey-reports" element={<ProtectedRoute permKey="admin_survey_reports"><AdminSurveyReportsPage /></ProtectedRoute>} />
+      <Route path="/email-delivery" element={<ProtectedRoute permKey="my_invoices"><EmailDeliveryReportPage /></ProtectedRoute>} />
+      <Route path="/admin/email-delivery" element={<ProtectedRoute permKey="admin_invoice_reports"><EmailDeliveryReportPage adminMode /></ProtectedRoute>} />
       <Route path="/review-feedback" element={<ProtectedRoute permKey="review_feedback"><ReviewFeedbackPage /></ProtectedRoute>} />
       <Route path="*" element={<NotFound />} />
     </Routes>

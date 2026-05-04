@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, Clock, FileText, Activity, Crown, Settings, LogOut, Zap, Users, ScrollText, BarChart3, MessageSquare, ClipboardList, ChevronLeft, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, FilePlus, Clock, FileText, Activity, Crown, Settings, LogOut, Zap, Users, ScrollText, BarChart3, MessageSquare, ClipboardList, ChevronLeft, ChevronRight, Mail } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -24,6 +24,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { to: '/create-invoice', label: 'Invoice — Regular', icon: FilePlus, perm: permissions?.create_invoice },
     { to: '/create-invoice-hourly', label: 'Invoice — Hourly', icon: Clock, perm: permissions?.create_invoice },
     { to: '/invoices', label: 'My Invoices', icon: FileText, perm: permissions?.my_invoices },
+    { to: '/email-delivery', label: 'Email Delivery', icon: Mail, perm: permissions?.my_invoices },
     { to: '/activity', label: 'Activity Logs', icon: Activity, perm: permissions?.activity_logs },
     { to: '/review-feedback', label: 'Help ChaseFlow Improve', icon: MessageSquare, perm: permissions?.review_feedback },
     { to: '/pro', label: 'Pro Plan', icon: Crown, perm: permissions?.pro_plan },
@@ -34,6 +35,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { to: '/admin/users', label: 'User Management', icon: Users, perm: permissions?.admin_user_management },
     { to: '/admin/system-logs', label: 'System Logs', icon: ScrollText, perm: permissions?.admin_system_logs },
     { to: '/admin/invoice-reports', label: 'Invoice Reports', icon: BarChart3, perm: permissions?.admin_invoice_reports },
+    { to: '/admin/email-delivery', label: 'Email Delivery (All)', icon: Mail, perm: permissions?.admin_invoice_reports },
     { to: '/admin/survey-reports', label: 'Survey Reports', icon: ClipboardList, perm: permissions?.admin_survey_reports },
   ];
 
