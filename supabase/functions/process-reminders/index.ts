@@ -18,42 +18,24 @@ function escapeHtml(s: string) {
 }
 
 function buildEmailBody(invoice: any, reminderType: string) {
-  const titleMap: Record<string, string> = {
-    before_3: "Friendly reminder — payment due in 3 days",
-    due: "Payment due today",
-    after_3: "Payment overdue — 3 days past due",
-    after_7: "Payment overdue — 7 days past due",
-    after_14: "Payment overdue — 14 days past due",
-  };
-  const heading = titleMap[reminderType] ?? "Payment reminder";
   const subject =
     invoice.reminder_email_subject ||
-    `Invoice ${invoice.invoice_code} from ${invoice.your_company_name ?? "ChaseFlow"}`;
+    `Invoice ${invoice.invoice_code} — ${invoice.your_company_name ?? "ChaseFlow"}`;
 
   const customBody = (invoice.email_body || "").trim();
-  const bodyHtml = customBody
-    ? escapeHtml(customBody).replace(/\n/g, "<br/>")
-    : `Hi ${escapeHtml(invoice.client_name ?? "there")},<br/><br/>This is a reminder that invoice <strong>${escapeHtml(invoice.invoice_code)}</strong> is ${reminderType === "before_3" ? "due in 3 days" : reminderType === "due" ? "due today" : "now overdue"}.`;
+  const fallback = `Hi ${invoice.client_name ?? "there"},\n\nThis is a friendly reminder regarding your invoice. Please find the details below and the invoice attached.\n\nThank you,\n${invoice.your_company_name ?? "ChaseFlow"}`;
+  const bodyText = customBody || fallback;
+  const bodyHtml = escapeHtml(bodyText).replace(/\n/g, "<br/>");
 
   const html = `<!DOCTYPE html>
-<html><body style="margin:0;padding:0;background:#f6f7fb;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
-  <div style="max-width:600px;margin:0 auto;padding:32px 16px;">
-    <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:32px;">
-      <h1 style="margin:0 0 8px;font-size:20px;color:#1d4ed8;">${heading}</h1>
-      <p style="margin:0 0 18px;font-size:13px;color:#64748b;">Invoice ${escapeHtml(invoice.invoice_code)}</p>
-      <div style="font-size:14px;line-height:1.6;color:#334155;margin-bottom:18px;">${bodyHtml}</div>
-      <table style="width:100%;border-collapse:collapse;font-size:14px;color:#334155;margin:0 0 18px;">
-        <tr><td style="padding:6px 0;"><strong>Reference</strong></td><td style="text-align:right;">${escapeHtml(invoice.invoice_reference ?? "—")}</td></tr>
-        <tr><td style="padding:6px 0;"><strong>Invoice date</strong></td><td style="text-align:right;">${escapeHtml(invoice.invoice_date ?? "—")}</td></tr>
-        <tr><td style="padding:6px 0;"><strong>Due date</strong></td><td style="text-align:right;">${escapeHtml(invoice.due_date ?? "—")}</td></tr>
-        <tr><td style="padding:6px 0;border-top:1px solid #e5e7eb;"><strong>Total amount</strong></td><td style="text-align:right;border-top:1px solid #e5e7eb;font-weight:600;">${fmtMoney(invoice.total_amount)}</td></tr>
-      </table>
-      <p style="font-size:12px;color:#94a3b8;margin:24px 0 0;">— ${escapeHtml(invoice.your_company_name ?? "ChaseFlow")}</p>
-    </div>
+<html><body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
+  <div style="max-width:620px;margin:0 auto;padding:24px 20px;">
+    <div style="font-size:14px;line-height:1.6;color:#334155;">${bodyHtml}</div>
   </div>
 </body></html>`.trim();
 
-  const text = `${heading}\nInvoice ${invoice.invoice_code}\n\n${customBody || `Hi ${invoice.client_name ?? "there"}, this is a reminder that invoice ${invoice.invoice_code} is ${reminderType === "due" ? "due today" : reminderType === "before_3" ? "due in 3 days" : "overdue"}.`}\n\nReference: ${invoice.invoice_reference ?? "-"}\nInvoice date: ${invoice.invoice_date ?? "-"}\nDue date: ${invoice.due_date ?? "-"}\nTotal: ${fmtMoney(invoice.total_amount)}\n\n— ${invoice.your_company_name ?? "ChaseFlow"}`;
+  // Plain text mirror — keep it nearly identical to HTML so spam filters don't flag mismatch.
+  const text = bodyText;
 
   return { subject, html, text };
 }
