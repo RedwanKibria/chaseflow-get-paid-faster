@@ -137,12 +137,17 @@ export default function AdminUserManagementPage() {
       for (const [key, val] of Object.entries(dirtyPerms)) {
         await supabase.rpc('admin_set_user_permission', { p_user_id: editUser.id, p_permission_key: key, p_enabled: val });
       }
-      // Save survey question permissions
+      // Save survey question permissions via admin RPC (upsert, dedup-safe)
       for (const [questionId, val] of Object.entries(dirtySurveyPerms)) {
         const existing = surveyPerms.find(p => p.survey_question_id === questionId);
-        if (existing) {
-          await supabase.from('user_survey_question_permissions').update({ can_view: val } as any).eq('id', existing.id);
-        }
+        const canAnswer = existing?.can_view === false ? false : val; // keep answer aligned with view
+        const { error } = await supabase.rpc('admin_set_survey_question_permission', {
+          p_user_id: editUser.id,
+          p_survey_question_id: questionId,
+          p_can_view: val,
+          p_can_answer: val ? canAnswer : false,
+        });
+        if (error) throw error;
       }
       // Apply dirty changes to local state
       setPerms(prev => prev ? { ...prev, ...dirtyPerms } : prev);

@@ -927,6 +927,15 @@ export type Database = {
             }
             Returns: undefined
           }
+      admin_set_survey_question_permission: {
+        Args: {
+          p_can_answer: boolean
+          p_can_view: boolean
+          p_survey_question_id: string
+          p_user_id: string
+        }
+        Returns: undefined
+      }
       admin_set_user_active: {
         Args: { p_is_active: boolean; p_user_id: string }
         Returns: undefined
