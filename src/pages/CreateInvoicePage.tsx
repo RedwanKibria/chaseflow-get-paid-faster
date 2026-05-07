@@ -28,6 +28,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
   const [reminderSubject, setReminderSubject] = useState('');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<{ clientName?: string; clientEmail?: string; dueDate?: string; items?: string }>({});
 
   const [items, setItems] = useState<{ description: string; qty: number; amount: number; hours: number; rate: number }[]>([
     { description: '', qty: 1, amount: 0, hours: 0, rate: 0 },
@@ -56,6 +57,18 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
   };
 
   const handleSave = async () => {
+    const newErrors: typeof errors = {};
+    if (!clientName.trim()) newErrors.clientName = 'Client Name is required';
+    if (!clientEmail.trim()) newErrors.clientEmail = 'Client Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim())) newErrors.clientEmail = 'Enter a valid email address';
+    if (!dueDate) newErrors.dueDate = 'Due Date is required';
+    const hasValidItem = items.some(i => (i.description.trim() !== '') && (type === 'regular' ? (i.qty > 0 && i.amount > 0) : (i.hours > 0 && i.rate > 0)));
+    if (!hasValidItem) newErrors.items = 'At least one item with description and amount is required';
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Please fill all required fields');
+      return;
+    }
     setSaving(true);
     const invoiceItems = items.map((item, i) => ({
       id: '',
@@ -136,12 +149,14 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               <h3 className="font-semibold text-foreground">Client Information</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>Client Name</Label>
-                  <Input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="John Doe" />
+                  <Label>Client Name <span className="text-destructive">*</span></Label>
+                  <Input value={clientName} onChange={e => { setClientName(e.target.value); if (errors.clientName) setErrors(p => ({ ...p, clientName: undefined })); }} placeholder="John Doe" aria-invalid={!!errors.clientName} className={errors.clientName ? 'border-destructive' : ''} />
+                  {errors.clientName && <p className="text-xs text-destructive">{errors.clientName}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Client Email</Label>
-                  <Input type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="john@company.com" />
+                  <Label>Client Email <span className="text-destructive">*</span></Label>
+                  <Input type="email" value={clientEmail} onChange={e => { setClientEmail(e.target.value); if (errors.clientEmail) setErrors(p => ({ ...p, clientEmail: undefined })); }} placeholder="john@company.com" aria-invalid={!!errors.clientEmail} className={errors.clientEmail ? 'border-destructive' : ''} />
+                  {errors.clientEmail && <p className="text-xs text-destructive">{errors.clientEmail}</p>}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -156,8 +171,9 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>Due Date</Label>
-                  <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                  <Label>Due Date <span className="text-destructive">*</span></Label>
+                  <Input type="date" value={dueDate} onChange={e => { setDueDate(e.target.value); if (errors.dueDate) setErrors(p => ({ ...p, dueDate: undefined })); }} aria-invalid={!!errors.dueDate} className={errors.dueDate ? 'border-destructive' : ''} />
+                  {errors.dueDate && <p className="text-xs text-destructive">{errors.dueDate}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Invoice Reference (optional)</Label>
@@ -218,6 +234,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                   </div>
                 ))}
               </div>
+              {errors.items && <p className="text-xs text-destructive mt-2">{errors.items}</p>}
               <div className="mt-4 pt-4 border-t border-border space-y-1">
                 <div className="flex items-center justify-between">
                   <Button variant="outline" size="sm" onClick={addItem}><Plus className="h-3 w-3 mr-1" /> Add Item</Button>
@@ -278,7 +295,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               <p className="text-sm font-bold text-foreground">Please add your Bank/Online transfer details in the mail</p>
             </div>
 
-            <Button onClick={handleSave} className="w-full h-11" disabled={!clientName || !dueDate || saving}>
+            <Button onClick={handleSave} className="w-full h-11" disabled={saving}>
               {saving ? 'Saving…' : 'Save Invoice'}
             </Button>
           </div>
