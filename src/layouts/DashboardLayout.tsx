@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, Clock, FileText, Activity, Crown, Settings, LogOut, Zap, Users, ScrollText, BarChart3, MessageSquare, ClipboardList, ChevronLeft, ChevronRight, Mail } from 'lucide-react';
+import { LayoutDashboard, FilePlus, Clock, FileText, Activity, Crown, Settings, LogOut, Zap, Users, ScrollText, BarChart3, MessageSquare, ClipboardList, ChevronLeft, ChevronRight, Mail, CalendarClock } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
@@ -36,6 +36,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { to: '/admin/system-logs', label: 'System Logs', icon: ScrollText, perm: permissions?.admin_system_logs },
     { to: '/admin/invoice-reports', label: 'Invoice Reports', icon: BarChart3, perm: permissions?.admin_invoice_reports },
     { to: '/admin/email-delivery', label: 'Email Delivery (All)', icon: Mail, perm: permissions?.admin_invoice_reports },
+    { to: '/admin/scheduler', label: 'Scheduler Report', icon: CalendarClock, perm: permissions?.admin_system_logs },
     { to: '/admin/survey-reports', label: 'Survey Reports', icon: ClipboardList, perm: permissions?.admin_survey_reports },
   ];
 
