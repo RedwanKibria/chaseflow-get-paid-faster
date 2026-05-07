@@ -927,6 +927,27 @@ export type Database = {
             }
             Returns: undefined
           }
+      admin_get_cron_jobs: {
+        Args: never
+        Returns: {
+          active: boolean
+          command: string
+          jobid: number
+          jobname: string
+          schedule: string
+        }[]
+      }
+      admin_get_cron_runs: {
+        Args: { p_limit?: number }
+        Returns: {
+          end_time: string
+          jobid: number
+          jobname: string
+          return_message: string
+          start_time: string
+          status: string
+        }[]
+      }
       admin_set_survey_question_permission: {
         Args: {
           p_can_answer: boolean
