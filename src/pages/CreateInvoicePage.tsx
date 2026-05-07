@@ -171,8 +171,9 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>Due Date</Label>
-                  <Input type="date" value={dueDate} onChange={e => setDueDate(e.target.value)} />
+                  <Label>Due Date <span className="text-destructive">*</span></Label>
+                  <Input type="date" value={dueDate} onChange={e => { setDueDate(e.target.value); if (errors.dueDate) setErrors(p => ({ ...p, dueDate: undefined })); }} aria-invalid={!!errors.dueDate} className={errors.dueDate ? 'border-destructive' : ''} />
+                  {errors.dueDate && <p className="text-xs text-destructive">{errors.dueDate}</p>}
                 </div>
                 <div className="space-y-1.5">
                   <Label>Invoice Reference (optional)</Label>
