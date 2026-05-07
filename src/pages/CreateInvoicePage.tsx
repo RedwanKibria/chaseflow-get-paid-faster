@@ -234,6 +234,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
                   </div>
                 ))}
               </div>
+              {errors.items && <p className="text-xs text-destructive mt-2">{errors.items}</p>}
               <div className="mt-4 pt-4 border-t border-border space-y-1">
                 <div className="flex items-center justify-between">
                   <Button variant="outline" size="sm" onClick={addItem}><Plus className="h-3 w-3 mr-1" /> Add Item</Button>
