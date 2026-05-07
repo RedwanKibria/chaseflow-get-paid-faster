@@ -19,6 +19,7 @@ import AdminInvoiceReportsPage from "./pages/AdminInvoiceReportsPage";
 import ReviewFeedbackPage from "./pages/ReviewFeedbackPage";
 import AdminSurveyReportsPage from "./pages/AdminSurveyReportsPage";
 import EmailDeliveryReportPage from "./pages/EmailDeliveryReportPage";
+import AdminSchedulerReportPage from "./pages/AdminSchedulerReportPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
