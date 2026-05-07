@@ -295,7 +295,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               <p className="text-sm font-bold text-foreground">Please add your Bank/Online transfer details in the mail</p>
             </div>
 
-            <Button onClick={handleSave} className="w-full h-11" disabled={!clientName || !dueDate || saving}>
+            <Button onClick={handleSave} className="w-full h-11" disabled={saving}>
               {saving ? 'Saving…' : 'Save Invoice'}
             </Button>
           </div>
