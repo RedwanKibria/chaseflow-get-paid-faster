@@ -149,12 +149,14 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
               <h3 className="font-semibold text-foreground">Client Information</h3>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label>Client Name</Label>
-                  <Input value={clientName} onChange={e => setClientName(e.target.value)} placeholder="John Doe" />
+                  <Label>Client Name <span className="text-destructive">*</span></Label>
+                  <Input value={clientName} onChange={e => { setClientName(e.target.value); if (errors.clientName) setErrors(p => ({ ...p, clientName: undefined })); }} placeholder="John Doe" aria-invalid={!!errors.clientName} className={errors.clientName ? 'border-destructive' : ''} />
+                  {errors.clientName && <p className="text-xs text-destructive">{errors.clientName}</p>}
                 </div>
                 <div className="space-y-1.5">
-                  <Label>Client Email</Label>
-                  <Input type="email" value={clientEmail} onChange={e => setClientEmail(e.target.value)} placeholder="john@company.com" />
+                  <Label>Client Email <span className="text-destructive">*</span></Label>
+                  <Input type="email" value={clientEmail} onChange={e => { setClientEmail(e.target.value); if (errors.clientEmail) setErrors(p => ({ ...p, clientEmail: undefined })); }} placeholder="john@company.com" aria-invalid={!!errors.clientEmail} className={errors.clientEmail ? 'border-destructive' : ''} />
+                  {errors.clientEmail && <p className="text-xs text-destructive">{errors.clientEmail}</p>}
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
