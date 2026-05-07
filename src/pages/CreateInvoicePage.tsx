@@ -94,7 +94,19 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
 
     setSaving(false);
     setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    setTimeout(() => setSaved(false), 4000);
+
+    const enabled: string[] = [];
+    if (reminders.before_3) enabled.push('3 days before due');
+    if (reminders.due) enabled.push('on due date');
+    if (reminders.after_3) enabled.push('3 days after');
+    if (reminders.after_7) enabled.push('7 days after');
+    if (reminders.after_14) enabled.push('14 days after');
+    const scheduleText = enabled.length
+      ? `Reminder emails will be sent to ${clientEmail || 'your client'} ${enabled.join(', ')} as per the schedule.`
+      : `No reminders selected — edit the invoice to enable automatic reminders.`;
+    toast.success('Invoice saved successfully', { description: scheduleText, duration: 6000 });
+
     setClientName(''); setClientEmail(''); setClientCompany(''); setYourCompanyName('');
     setDueDate(''); setReference(''); setVatPercent(0); setTaxPercent(0); setReminderSubject('');
     setItems([{ description: '', qty: 1, amount: 0, hours: 0, rate: 0 }]);
