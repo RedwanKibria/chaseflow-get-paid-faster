@@ -57,6 +57,18 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
   };
 
   const handleSave = async () => {
+    const newErrors: typeof errors = {};
+    if (!clientName.trim()) newErrors.clientName = 'Client Name is required';
+    if (!clientEmail.trim()) newErrors.clientEmail = 'Client Email is required';
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail.trim())) newErrors.clientEmail = 'Enter a valid email address';
+    if (!dueDate) newErrors.dueDate = 'Due Date is required';
+    const hasValidItem = items.some(i => (i.description.trim() !== '') && (type === 'regular' ? (i.qty > 0 && i.amount > 0) : (i.hours > 0 && i.rate > 0)));
+    if (!hasValidItem) newErrors.items = 'At least one item with description and amount is required';
+    setErrors(newErrors);
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Please fill all required fields');
+      return;
+    }
     setSaving(true);
     const invoiceItems = items.map((item, i) => ({
       id: '',
