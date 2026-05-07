@@ -28,6 +28,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
   const [reminderSubject, setReminderSubject] = useState('');
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [errors, setErrors] = useState<{ clientName?: string; clientEmail?: string; dueDate?: string; items?: string }>({});
 
   const [items, setItems] = useState<{ description: string; qty: number; amount: number; hours: number; rate: number }[]>([
     { description: '', qty: 1, amount: 0, hours: 0, rate: 0 },
