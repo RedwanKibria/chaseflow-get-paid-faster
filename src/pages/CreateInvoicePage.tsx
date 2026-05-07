@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface CreateInvoiceProps {
   type: 'regular' | 'hourly';
