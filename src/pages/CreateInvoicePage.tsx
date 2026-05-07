@@ -125,7 +125,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
 
         {saved && (
           <div className="mb-6 p-4 rounded-lg bg-accent text-accent-foreground text-sm font-medium">
-            ✓ Invoice saved successfully! It's now visible in Dashboard and My Invoices.
+            ✓ Invoice saved successfully! It's now visible in Dashboard and My Invoices. Reminder emails will be sent automatically as per your selected schedule.
           </div>
         )}
 
