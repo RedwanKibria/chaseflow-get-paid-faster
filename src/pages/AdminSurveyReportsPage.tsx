@@ -54,7 +54,7 @@ export default function AdminSurveyReportsPage() {
       setLoading(true);
       const [{ data }, { data: qs }] = await Promise.all([
         supabase.from('survey_reports_view').select('*').order('created_at', { ascending: false }),
-        supabase.from('survey_questions').select('id, question_text, question_order, question_key, answer_type').order('question_order'),
+        supabase.from('survey_questions').select('id, question_text, question_order, question_key, answer_type').eq('is_active', true).order('question_order'),
       ]);
       if (data) setRows(data as SurveyRow[]);
       if (qs) setQuestions(qs as SurveyQuestion[]);
