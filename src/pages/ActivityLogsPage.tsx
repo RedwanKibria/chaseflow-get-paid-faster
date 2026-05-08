@@ -3,10 +3,23 @@ import { useApp } from '@/context/AppContext';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import TablePagination from '@/components/TablePagination';
 
 export default function ActivityLogsPage() {
-  const { activityLogs, invoices } = useApp();
+  const { activityLogs, invoices, user } = useApp();
   const invoiceMap = useMemo(() => new Map(invoices.map(i => [i.id, i.invoice_code])), [invoices]);
+  const [search, setSearch] = useState('');
+  const [filterAction, setFilterAction] = useState('');
+  const [filterDateFrom, setFilterDateFrom] = useState('');
+  const [filterDateTo, setFilterDateTo] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
+  // Restrict to user's own actions only — exclude system/admin actions where user is only "related"
+  const ownLogs = useMemo(
+    () => activityLogs.filter(l => l.actor_user_id === user?.id),
+    [activityLogs, user?.id]
+  );
   const [search, setSearch] = useState('');
   const [filterAction, setFilterAction] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
