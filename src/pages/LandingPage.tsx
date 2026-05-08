@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Zap, FileText, Bell, BarChart3, Shield, Clock, ChevronRight, Check } from 'lucide-react';
+import { Zap, FileText, Bell, BarChart3, Shield, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
 const features = [
@@ -9,12 +9,6 @@ const features = [
   { icon: Shield, title: 'Activity Logging', desc: 'Every action tracked — full audit trail for your peace of mind.' },
 ];
 
-const faqs = [
-  { q: 'Is ChaseFlow free to use?', a: 'Yes! Our Free plan includes up to 10 invoices per month with core features. Upgrade to Pro for unlimited invoices and advanced automation.' },
-  { q: 'Can I customise reminder emails?', a: 'Absolutely. You can edit reminder templates and choose exactly when reminders are sent — before, on, or after the due date.' },
-  { q: 'Does ChaseFlow support hourly billing?', a: 'Yes. Create invoices with hourly rates and tracked hours, perfect for consultants and freelancers.' },
-  { q: 'How does the Pro plan work?', a: 'Pro unlocks unlimited invoices, branded templates, bulk actions, and advanced analytics. You can try Pro features in demo mode before upgrading.' },
-];
 
 export default function LandingPage() {
   return (
@@ -72,61 +66,15 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing */}
-      <section className="py-20" id="pricing">
-        <div className="container mx-auto px-6">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-4">Simple, transparent pricing</h2>
-          <p className="text-center text-muted-foreground mb-12">Start free. Upgrade when you're ready.</p>
-          <div className="grid md:grid-cols-2 gap-8 max-w-3xl mx-auto">
-            <div className="bg-card rounded-xl p-8 shadow-card border border-border">
-              <h3 className="text-lg font-semibold text-foreground">Free</h3>
-              <p className="text-4xl font-bold text-foreground mt-2">£0<span className="text-base font-normal text-muted-foreground">/mo</span></p>
-              <ul className="mt-6 space-y-3">
-                {['Up to 10 invoices/month', 'Basic reminders', 'Dashboard overview', 'Activity logs'].map(t => (
-                  <li key={t} className="flex items-center gap-2 text-sm text-muted-foreground"><Check className="h-4 w-4 text-success" />{t}</li>
-                ))}
-              </ul>
-              <Link to="/signup"><Button variant="outline" className="w-full mt-8">Get Started</Button></Link>
-            </div>
-            <div className="bg-card rounded-xl p-8 shadow-card border-2 border-primary relative">
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full gradient-primary text-primary-foreground text-xs font-semibold">Popular</div>
-              <h3 className="text-lg font-semibold text-foreground">Pro</h3>
-              <p className="text-4xl font-bold text-foreground mt-2">£19<span className="text-base font-normal text-muted-foreground">/mo</span></p>
-              <ul className="mt-6 space-y-3">
-                {['Unlimited invoices', 'Advanced reminders', 'Branded templates', 'Bulk actions', 'Priority support', 'Analytics dashboard'].map(t => (
-                  <li key={t} className="flex items-center gap-2 text-sm text-muted-foreground"><Check className="h-4 w-4 text-primary" />{t}</li>
-                ))}
-              </ul>
-              <Link to="/signup"><Button className="w-full mt-8">Upgrade to Pro</Button></Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* About */}
       <section className="py-20 bg-surface">
         <div className="container mx-auto px-6 max-w-3xl text-center">
           <h2 className="text-3xl font-bold text-foreground mb-4">Built for people who do great work</h2>
           <p className="text-muted-foreground text-lg">
-            ChaseFlow was created by freelancers who got tired of awkward payment follow-ups. 
-            We believe your energy should go into your craft — not chasing invoices. 
+            ChaseFlow was created by freelancers who got tired of awkward payment follow-ups.
+            We believe your energy should go into your craft — not chasing invoices.
             Our platform automates the uncomfortable parts of getting paid, so every project ends on a positive note.
           </p>
-        </div>
-      </section>
-
-      {/* FAQ */}
-      <section className="py-20" id="faq">
-        <div className="container mx-auto px-6 max-w-3xl">
-          <h2 className="text-3xl font-bold text-center text-foreground mb-12">Frequently asked questions</h2>
-          <div className="space-y-6">
-            {faqs.map((f, i) => (
-              <div key={i} className="bg-card rounded-xl p-6 shadow-card">
-                <h3 className="font-semibold text-foreground mb-2">{f.q}</h3>
-                <p className="text-sm text-muted-foreground">{f.a}</p>
-              </div>
-            ))}
-          </div>
         </div>
       </section>
 

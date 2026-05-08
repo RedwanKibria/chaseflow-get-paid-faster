@@ -19,7 +19,7 @@ interface AppContextType {
   login: (email: string, password: string) => Promise<string | null>;
   signup: (name: string, email: string, password: string) => Promise<string | null>;
   logout: () => void;
-  addInvoice: (inv: Omit<Invoice, 'id' | 'user_id' | 'created_at' | 'status' | 'invoice_code' | 'subtotal_amount' | 'vat_amount' | 'tax_amount' | 'total_amount' | 'paid_date' | 'cancelled_at' | 'is_deleted' | 'deleted_at' | 'before_3_sent' | 'due_sent' | 'after_3_sent' | 'after_7_sent' | 'after_14_sent' | 'invoice_file_path' | 'invoice_file_name'>) => Promise<void>;
+  addInvoice: (inv: Omit<Invoice, 'id' | 'user_id' | 'created_at' | 'status' | 'invoice_code' | 'subtotal_amount' | 'vat_amount' | 'tax_amount' | 'total_amount' | 'paid_date' | 'cancelled_at' | 'is_deleted' | 'deleted_at' | 'before_3_sent' | 'due_sent' | 'after_3_sent' | 'after_7_sent' | 'after_14_sent' | 'invoice_file_path' | 'invoice_file_name'>) => Promise<string | null>;
   updateInvoice: (inv: Invoice) => Promise<void>;
   markAsPaid: (id: string) => Promise<void>;
   cancelInvoice: (id: string) => Promise<void>;
@@ -262,7 +262,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       .select()
       .single();
 
-    if (error || !inserted) return;
+    if (error || !inserted) return null;
 
     if (inv.items.length > 0) {
       await supabase.from('invoice_items').insert(
@@ -279,7 +279,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
       );
     }
 
-    // Refresh financials (subtotal, vat_amount, tax_amount, total_amount)
     await supabase.rpc('refresh_invoice_financials', { p_invoice_id: inserted.id });
     await supabase.rpc('create_reminder_jobs_for_invoice', { p_invoice_id: inserted.id });
 
@@ -289,9 +288,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
       description: `Invoice created for ${inv.client_company || inv.client_name}`,
     });
 
-    await refreshInvoices();
-
-    // Generate and upload PDF for attachment in reminder emails
+    // Generate and upload PDF BEFORE returning so any send-now flow has the attachment.
     try {
       const { data: full } = await supabase.from('invoices').select('*, items:invoice_items(*)').eq('id', inserted.id).single();
       if (full) {
@@ -299,6 +296,9 @@ export function AppProvider({ children }: { children: ReactNode }) {
         await generateAndUploadInvoicePdf(full as any, symbol);
       }
     } catch (e) { console.warn('PDF upload skipped:', e); }
+
+    await refreshInvoices();
+    return inserted.id;
   }, [session, addLog, refreshInvoices, user]);
 
   const updateInvoice = useCallback(async (inv: Invoice) => {
