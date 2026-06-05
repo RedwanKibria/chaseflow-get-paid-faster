@@ -49,6 +49,9 @@ export default function AdminSurveyReportsPage() {
   const [viewRow, setViewRow] = useState<SurveyRow | null>(null);
   const [detailAnswers, setDetailAnswers] = useState<DetailAnswer[]>([]);
   const [loadingDetail, setLoadingDetail] = useState(false);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
 
   useEffect(() => {
     const fetch = async () => {
