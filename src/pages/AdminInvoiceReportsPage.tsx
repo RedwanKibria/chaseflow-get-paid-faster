@@ -57,6 +57,8 @@ export default function AdminInvoiceReportsPage() {
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     if (!isAdmin) return;
