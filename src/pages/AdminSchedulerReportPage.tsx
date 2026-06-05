@@ -174,7 +174,7 @@ export default function AdminSchedulerReportPage() {
                 {!loading && runs.length === 0 && (
                   <tr><td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">No scheduler runs found.</td></tr>
                 )}
-                {runs.map((r, i) => {
+                {pagedRuns.map((r, i) => {
                   const dur = r.end_time ? new Date(r.end_time).getTime() - new Date(r.start_time).getTime() : null;
                   return (
                     <tr key={i} className="border-t border-border">
