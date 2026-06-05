@@ -171,7 +171,7 @@ export default function MyInvoicesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(inv => (
+                {paged.map(inv => (
                   <tr key={inv.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3"><Checkbox checked={selected.has(inv.id)} onCheckedChange={() => toggleSelect(inv.id)} /></td>
                     <td className="p-3 font-medium text-foreground">{inv.invoice_code}</td>
