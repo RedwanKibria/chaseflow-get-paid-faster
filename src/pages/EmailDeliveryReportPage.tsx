@@ -184,7 +184,7 @@ export default function EmailDeliveryReportPage({ adminMode = false }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(r => (
+                {paged.map(r => (
                   <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3 text-foreground">{r.client_name}</td>
                     <td className="p-3 text-muted-foreground">{r.client_company || '—'}</td>
