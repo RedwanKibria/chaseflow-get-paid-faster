@@ -106,6 +106,10 @@ export default function AdminSurveyReportsPage() {
     );
   }, [rows, search]);
 
+  useEffect(() => { setPage(1); }, [search]);
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
+
   // Use full question text as column headers in export
   const exportData = useMemo(() => {
     return filtered.map(r => {
