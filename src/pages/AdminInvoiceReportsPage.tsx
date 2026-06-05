@@ -176,7 +176,7 @@ export default function AdminInvoiceReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(r => (
+                {paged.map(r => (
                   <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3 font-medium text-foreground">{r.invoice_code || '—'}</td>
                     <td className="p-3 text-muted-foreground capitalize">{r.invoice_type}</td>
