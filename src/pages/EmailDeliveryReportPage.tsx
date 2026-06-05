@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, CheckCircle2, X, Download, FileSpreadsheet } from 'lucide-react';
 import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
+import TablePagination from '@/components/TablePagination';
 
 interface Row {
   id: string;
