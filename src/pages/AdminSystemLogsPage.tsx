@@ -79,6 +79,10 @@ export default function AdminSystemLogsPage() {
     });
   }, [logs, search, filterAction, filterDateFrom, filterDateTo]);
 
+  useEffect(() => { setPage(1); }, [search, filterAction, filterDateFrom, filterDateTo]);
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
+
   if (!isAdmin) {
     return <DashboardLayout><div className="p-12 text-center text-muted-foreground">Admin access required.</div></DashboardLayout>;
   }
