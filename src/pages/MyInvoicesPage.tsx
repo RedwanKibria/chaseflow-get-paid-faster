@@ -36,6 +36,8 @@ export default function MyInvoicesPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const currency = user?.currency || 'GBP';
   const currencySymbol = getCurrencySymbol(currency);
