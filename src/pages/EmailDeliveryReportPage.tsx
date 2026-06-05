@@ -204,6 +204,9 @@ export default function EmailDeliveryReportPage({ adminMode = false }: Props) {
             </table>
           </div>
           {!filtered.length && <div className="p-12 text-center text-muted-foreground">No invoices found.</div>}
+          {filtered.length > 0 && (
+            <TablePagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       </div>
     </DashboardLayout>
