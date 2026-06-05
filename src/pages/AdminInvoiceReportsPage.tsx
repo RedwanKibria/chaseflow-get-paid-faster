@@ -201,6 +201,9 @@ export default function AdminInvoiceReportsPage() {
             </table>
           </div>
           {filtered.length === 0 && <div className="p-12 text-center text-muted-foreground">No reports found.</div>}
+          {filtered.length > 0 && (
+            <TablePagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       </div>
     </DashboardLayout>
