@@ -45,6 +45,10 @@ export default function AdminSchedulerReportPage() {
   const [jobs, setJobs] = useState<CronJob[]>([]);
   const [runs, setRuns] = useState<CronRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const pagedRuns = useMemo(() => runs.slice((page - 1) * pageSize, page * pageSize), [runs, page, pageSize]);
+
 
   const load = async () => {
     setLoading(true);
