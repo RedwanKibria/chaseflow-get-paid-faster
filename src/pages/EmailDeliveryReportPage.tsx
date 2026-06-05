@@ -50,6 +50,9 @@ export default function EmailDeliveryReportPage({ adminMode = false }: Props) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sentFilter, setSentFilter] = useState(''); // any/none/before_3/due/after_3/after_7/after_14
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
 
   useEffect(() => {
     const load = async () => {
