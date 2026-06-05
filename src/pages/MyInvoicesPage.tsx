@@ -214,6 +214,9 @@ export default function MyInvoicesPage() {
           {filtered.length === 0 && (
             <div className="p-12 text-center text-muted-foreground">No invoices found matching your filters.</div>
           )}
+          {filtered.length > 0 && (
+            <TablePagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       </div>
 
