@@ -145,6 +145,9 @@ export default function AdminSystemLogsPage() {
             </table>
           </div>
           {filtered.length === 0 && <div className="p-12 text-center text-muted-foreground">No logs found.</div>}
+          {filtered.length > 0 && (
+            <TablePagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       </div>
     </DashboardLayout>
