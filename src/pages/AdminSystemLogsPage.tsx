@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/context/AppContext';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import TablePagination from '@/components/TablePagination';
 
 interface LogRow {
   id: string;
