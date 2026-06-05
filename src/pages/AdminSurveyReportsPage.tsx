@@ -175,7 +175,7 @@ export default function AdminSurveyReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map((r, i) => (
+                {paged.map((r, i) => (
                   <tr key={r.submission_id ?? i} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3 font-medium text-foreground">{r.full_name || '—'}</td>
                     <td className="p-3 text-muted-foreground">{r.email || '—'}</td>
