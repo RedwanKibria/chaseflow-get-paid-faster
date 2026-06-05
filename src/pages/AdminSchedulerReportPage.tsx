@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Download, RefreshCw, Calendar, CheckCircle2, XCircle, Clock } from 'luc
 import { downloadCsv } from '@/lib/exportUtils';
 import { useApp } from '@/context/AppContext';
 import { Navigate } from 'react-router-dom';
+import TablePagination from '@/components/TablePagination';
 
 type CronJob = { jobid: number; jobname: string; schedule: string; active: boolean; command: string };
 type CronRun = { jobid: number; jobname: string; status: string; return_message: string; start_time: string; end_time: string };
