@@ -197,6 +197,9 @@ export default function AdminSurveyReportsPage() {
           {!loading && filtered.length === 0 && (
             <div className="p-12 text-center text-muted-foreground">No survey submissions found.</div>
           )}
+          {!loading && filtered.length > 0 && (
+            <TablePagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
 
         <Dialog open={!!viewRow} onOpenChange={() => setViewRow(null)}>
