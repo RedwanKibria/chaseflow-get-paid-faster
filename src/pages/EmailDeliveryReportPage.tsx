@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, CheckCircle2, X, Download, FileSpreadsheet } from 'lucide-react';
 import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
+import TablePagination from '@/components/TablePagination';
 
 interface Row {
   id: string;
@@ -49,6 +50,9 @@ export default function EmailDeliveryReportPage({ adminMode = false }: Props) {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [sentFilter, setSentFilter] = useState(''); // any/none/before_3/due/after_3/after_7/after_14
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+
 
   useEffect(() => {
     const load = async () => {
@@ -93,6 +97,10 @@ export default function EmailDeliveryReportPage({ adminMode = false }: Props) {
     }
     return true;
   }), [rows, search, statusFilter, sentFilter]);
+
+  useEffect(() => { setPage(1); }, [search, statusFilter, sentFilter]);
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
 
   const exportData = useMemo(() => filtered.map(r => ({
     'Client Name': r.client_name ?? '',
@@ -176,7 +184,7 @@ export default function EmailDeliveryReportPage({ adminMode = false }: Props) {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(r => (
+                {paged.map(r => (
                   <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3 text-foreground">{r.client_name}</td>
                     <td className="p-3 text-muted-foreground">{r.client_company || '—'}</td>
@@ -196,6 +204,9 @@ export default function EmailDeliveryReportPage({ adminMode = false }: Props) {
             </table>
           </div>
           {!filtered.length && <div className="p-12 text-center text-muted-foreground">No invoices found.</div>}
+          {filtered.length > 0 && (
+            <TablePagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       </div>
     </DashboardLayout>

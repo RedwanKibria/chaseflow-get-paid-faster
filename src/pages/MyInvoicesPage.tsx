@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Check, Download, Search, XCircle, Trash2, CheckCircle2, X, FileSpreadsh
 import { downloadInvoicePdf } from '@/lib/invoiceStorage';
 import { getCurrencySymbol } from '@/lib/currency';
 import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
+import TablePagination from '@/components/TablePagination';
 
 const statusBadge = (status: string) => {
   const map: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
@@ -35,6 +36,8 @@ export default function MyInvoicesPage() {
   const [filterStatus, setFilterStatus] = useState('');
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [deleteTarget, setDeleteTarget] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const currency = user?.currency || 'GBP';
   const currencySymbol = getCurrencySymbol(currency);
@@ -50,6 +53,9 @@ export default function MyInvoicesPage() {
       return true;
     });
   }, [invoices, filterName, filterCompany, filterDateFrom, filterDateTo, filterStatus]);
+
+  useEffect(() => { setPage(1); }, [filterName, filterCompany, filterDateFrom, filterDateTo, filterStatus]);
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
 
   const toggleSelect = (id: string) => {
     setSelected(prev => {
@@ -165,7 +171,7 @@ export default function MyInvoicesPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(inv => (
+                {paged.map(inv => (
                   <tr key={inv.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3"><Checkbox checked={selected.has(inv.id)} onCheckedChange={() => toggleSelect(inv.id)} /></td>
                     <td className="p-3 font-medium text-foreground">{inv.invoice_code}</td>
@@ -207,6 +213,9 @@ export default function MyInvoicesPage() {
           </div>
           {filtered.length === 0 && (
             <div className="p-12 text-center text-muted-foreground">No invoices found matching your filters.</div>
+          )}
+          {filtered.length > 0 && (
+            <TablePagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
           )}
         </div>
       </div>

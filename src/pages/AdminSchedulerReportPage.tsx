@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -7,6 +7,7 @@ import { Download, RefreshCw, Calendar, CheckCircle2, XCircle, Clock } from 'luc
 import { downloadCsv } from '@/lib/exportUtils';
 import { useApp } from '@/context/AppContext';
 import { Navigate } from 'react-router-dom';
+import TablePagination from '@/components/TablePagination';
 
 type CronJob = { jobid: number; jobname: string; schedule: string; active: boolean; command: string };
 type CronRun = { jobid: number; jobname: string; status: string; return_message: string; start_time: string; end_time: string };
@@ -44,6 +45,10 @@ export default function AdminSchedulerReportPage() {
   const [jobs, setJobs] = useState<CronJob[]>([]);
   const [runs, setRuns] = useState<CronRun[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
+  const pagedRuns = useMemo(() => runs.slice((page - 1) * pageSize, page * pageSize), [runs, page, pageSize]);
+
 
   const load = async () => {
     setLoading(true);
@@ -169,7 +174,7 @@ export default function AdminSchedulerReportPage() {
                 {!loading && runs.length === 0 && (
                   <tr><td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">No scheduler runs found.</td></tr>
                 )}
-                {runs.map((r, i) => {
+                {pagedRuns.map((r, i) => {
                   const dur = r.end_time ? new Date(r.end_time).getTime() - new Date(r.start_time).getTime() : null;
                   return (
                     <tr key={i} className="border-t border-border">
@@ -186,6 +191,9 @@ export default function AdminSchedulerReportPage() {
               </tbody>
             </table>
           </div>
+          {runs.length > 0 && (
+            <TablePagination page={page} pageSize={pageSize} total={runs.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       </div>
     </DashboardLayout>

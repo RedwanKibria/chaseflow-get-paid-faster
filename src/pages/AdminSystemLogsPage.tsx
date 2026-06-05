@@ -4,6 +4,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/context/AppContext';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import TablePagination from '@/components/TablePagination';
 
 interface LogRow {
   id: string;
@@ -24,6 +25,8 @@ export default function AdminSystemLogsPage() {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [userEmailMap, setUserEmailMap] = useState<Map<string, string>>(new Map());
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const invoiceMap = useMemo(() => new Map(invoices.map(i => [i.id, i.invoice_code])), [invoices]);
 
@@ -76,6 +79,10 @@ export default function AdminSystemLogsPage() {
     });
   }, [logs, search, filterAction, filterDateFrom, filterDateTo]);
 
+  useEffect(() => { setPage(1); }, [search, filterAction, filterDateFrom, filterDateTo]);
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
+
   if (!isAdmin) {
     return <DashboardLayout><div className="p-12 text-center text-muted-foreground">Admin access required.</div></DashboardLayout>;
   }
@@ -119,7 +126,7 @@ export default function AdminSystemLogsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(log => (
+                {paged.map(log => (
                   <tr key={log.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3 text-muted-foreground font-mono text-xs">{log.log_code || '—'}</td>
                     <td className="p-3 text-muted-foreground text-xs">{log.actor_user_id ? (userEmailMap.get(log.actor_user_id) || log.actor_user_id.slice(0, 8)) : '—'}</td>
@@ -138,6 +145,9 @@ export default function AdminSystemLogsPage() {
             </table>
           </div>
           {filtered.length === 0 && <div className="p-12 text-center text-muted-foreground">No logs found.</div>}
+          {filtered.length > 0 && (
+            <TablePagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       </div>
     </DashboardLayout>

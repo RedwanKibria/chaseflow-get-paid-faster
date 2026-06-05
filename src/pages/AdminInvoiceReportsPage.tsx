@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, CheckCircle2, X, Download, FileSpreadsheet } from 'lucide-react';
 import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
+import TablePagination from '@/components/TablePagination';
 
 interface ReportRow {
   id: string | null;
@@ -56,6 +57,8 @@ export default function AdminInvoiceReportsPage() {
   const [rows, setRows] = useState<ReportRow[]>([]);
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   useEffect(() => {
     if (!isAdmin) return;
@@ -77,6 +80,10 @@ export default function AdminInvoiceReportsPage() {
       return true;
     });
   }, [rows, search, filterStatus]);
+
+  useEffect(() => { setPage(1); }, [search, filterStatus]);
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
 
   const exportData = useMemo(() => {
     return filtered.map(r => ({
@@ -169,7 +176,7 @@ export default function AdminInvoiceReportsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(r => (
+                {paged.map(r => (
                   <tr key={r.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3 font-medium text-foreground">{r.invoice_code || '—'}</td>
                     <td className="p-3 text-muted-foreground capitalize">{r.invoice_type}</td>
@@ -194,6 +201,9 @@ export default function AdminInvoiceReportsPage() {
             </table>
           </div>
           {filtered.length === 0 && <div className="p-12 text-center text-muted-foreground">No reports found.</div>}
+          {filtered.length > 0 && (
+            <TablePagination page={page} pageSize={pageSize} total={filtered.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       </div>
     </DashboardLayout>
