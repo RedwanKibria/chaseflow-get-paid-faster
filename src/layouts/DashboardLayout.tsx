@@ -1,23 +1,30 @@
 import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FilePlus, Clock, FileText, Activity, Crown, Settings, LogOut, Zap, Users, ScrollText, BarChart3, MessageSquare, ClipboardList, ChevronLeft, ChevronRight, Mail, CalendarClock } from 'lucide-react';
+import { LayoutDashboard, FilePlus, Clock, FileText, Activity, Crown, Settings, LogOut, Zap, Users, ScrollText, BarChart3, MessageSquare, ClipboardList, ChevronLeft, ChevronRight, Mail, CalendarClock, Menu } from 'lucide-react';
 import { useApp } from '@/context/AppContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const SIDEBAR_KEY = 'chaseflow_sidebar_collapsed';
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   const { pathname } = useLocation();
   const { user, logout, isAdmin, permissions } = useApp();
+  const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(() => {
     try { return localStorage.getItem(SIDEBAR_KEY) === 'true'; } catch { return false; }
   });
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const toggleCollapsed = () => {
     const next = !collapsed;
     setCollapsed(next);
     try { localStorage.setItem(SIDEBAR_KEY, String(next)); } catch {}
   };
+
+  // Close mobile drawer on route change
+  useEffect(() => { setMobileOpen(false); }, [pathname]);
 
   const navItems = [
     { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard, perm: permissions?.dashboard },
@@ -43,8 +50,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
   const visibleNav = navItems.filter(i => i.perm !== false);
   const visibleAdmin = isAdmin ? adminItems.filter(i => i.perm !== false) : [];
 
-  const NavItem = ({ item }: { item: typeof navItems[number] }) => {
+  const NavItem = ({ item, forceLabel = false }: { item: typeof navItems[number]; forceLabel?: boolean }) => {
     const active = pathname === item.to;
+    const showLabel = forceLabel || !collapsed;
     const link = (
       <Link
         to={item.to}
@@ -52,14 +60,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
           active
             ? 'bg-sidebar-accent text-sidebar-primary-foreground'
             : 'text-sidebar-muted hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
-        } ${collapsed ? 'justify-center' : ''}`}
+        } ${!showLabel ? 'justify-center' : ''}`}
       >
         <item.icon className="h-4 w-4 shrink-0" />
-        {!collapsed && <span className="truncate">{item.label}</span>}
+        {showLabel && <span className="truncate">{item.label}</span>}
       </Link>
     );
 
-    if (collapsed) {
+    if (!showLabel) {
       return (
         <Tooltip delayDuration={0}>
           <TooltipTrigger asChild>{link}</TooltipTrigger>
@@ -70,54 +78,46 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     return link;
   };
 
-  return (
-    <div className="flex min-h-screen bg-surface">
-      <aside className={`${collapsed ? 'w-16' : 'w-64'} bg-sidebar flex flex-col shrink-0 transition-all duration-200 relative`}>
-        <div className={`p-6 ${collapsed ? 'px-3' : ''}`}>
+  const SidebarBody = ({ inDrawer = false }: { inDrawer?: boolean }) => {
+    const expanded = inDrawer || !collapsed;
+    return (
+      <>
+        <div className={`p-6 ${!expanded ? 'px-3' : ''}`}>
           <Link to="/dashboard" className="flex items-center gap-2">
             <Zap className="h-7 w-7 text-sidebar-primary shrink-0" />
-            {!collapsed && <span className="text-xl font-bold text-sidebar-primary-foreground">ChaseFlow</span>}
+            {expanded && <span className="text-xl font-bold text-sidebar-primary-foreground">ChaseFlow</span>}
           </Link>
         </div>
 
-        <button
-          onClick={toggleCollapsed}
-          className="absolute -right-3 top-16 z-10 h-6 w-6 rounded-full bg-sidebar-accent border border-sidebar-border flex items-center justify-center text-sidebar-muted hover:text-sidebar-foreground transition-colors shadow-sm"
-        >
-          {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
-        </button>
-
-        <nav className="flex-1 px-3 space-y-1">
-          {visibleNav.map(item => (
-            <NavItem key={item.to} item={item} />
-          ))}
+        <nav className="flex-1 px-3 space-y-1 overflow-y-auto">
+          {visibleNav.map(item => (<NavItem key={item.to} item={item} forceLabel={inDrawer} />))}
 
           {visibleAdmin.length > 0 && (
             <>
-              {!collapsed && (
+              {expanded ? (
                 <div className="pt-4 pb-1 px-3">
                   <span className="text-[10px] uppercase tracking-wider text-sidebar-muted font-semibold">Admin</span>
                 </div>
+              ) : (
+                <div className="pt-4 border-t border-sidebar-border mx-1" />
               )}
-              {collapsed && <div className="pt-4 border-t border-sidebar-border mx-1" />}
-              {visibleAdmin.map(item => (
-                <NavItem key={item.to} item={item} />
-              ))}
+              {visibleAdmin.map(item => (<NavItem key={item.to} item={item} forceLabel={inDrawer} />))}
             </>
           )}
         </nav>
+
         <div className="p-4 border-t border-sidebar-border">
-          <div className={`flex items-center gap-3 px-3 py-2 ${collapsed ? 'justify-center' : ''}`}>
+          <div className={`flex items-center gap-3 px-3 py-2 ${!expanded ? 'justify-center' : ''}`}>
             <div className="h-8 w-8 rounded-full bg-sidebar-accent flex items-center justify-center text-sm font-semibold text-sidebar-primary-foreground shrink-0">
               {user?.full_name?.charAt(0) || 'A'}
             </div>
-            {!collapsed && (
+            {expanded && (
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-medium text-sidebar-foreground truncate">{user?.full_name}</p>
                 <p className="text-xs text-sidebar-muted truncate">{user?.email}</p>
               </div>
             )}
-            {collapsed ? (
+            {!expanded ? (
               <Tooltip delayDuration={0}>
                 <TooltipTrigger asChild>
                   <button onClick={logout} className="text-sidebar-muted hover:text-sidebar-foreground transition-colors">
@@ -127,15 +127,57 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 <TooltipContent side="right" className="text-xs">Logout</TooltipContent>
               </Tooltip>
             ) : (
-              <button onClick={logout} className="text-sidebar-muted hover:text-sidebar-foreground transition-colors">
+              <button onClick={logout} className="text-sidebar-muted hover:text-sidebar-foreground transition-colors" aria-label="Logout">
                 <LogOut className="h-4 w-4" />
               </button>
             )}
           </div>
         </div>
-      </aside>
-      <main className="flex-1 overflow-auto">
-        <div className="p-8">{children}</div>
+      </>
+    );
+  };
+
+  return (
+    <div className="flex min-h-screen bg-surface">
+      {/* Desktop sidebar */}
+      {!isMobile && (
+        <aside className={`${collapsed ? 'w-16' : 'w-64'} bg-sidebar flex flex-col shrink-0 transition-all duration-200 relative`}>
+          <button
+            onClick={toggleCollapsed}
+            className="absolute -right-3 top-16 z-10 h-6 w-6 rounded-full bg-sidebar-accent border border-sidebar-border flex items-center justify-center text-sidebar-muted hover:text-sidebar-foreground transition-colors shadow-sm"
+            aria-label={collapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {collapsed ? <ChevronRight className="h-3.5 w-3.5" /> : <ChevronLeft className="h-3.5 w-3.5" />}
+          </button>
+          <SidebarBody />
+        </aside>
+      )}
+
+      <main className="flex-1 overflow-auto min-w-0">
+        {/* Mobile header */}
+        {isMobile && (
+          <header className="sticky top-0 z-40 flex items-center justify-between gap-3 px-4 h-14 bg-sidebar border-b border-sidebar-border">
+            <Link to="/dashboard" className="flex items-center gap-2">
+              <Zap className="h-6 w-6 text-sidebar-primary" />
+              <span className="text-base font-bold text-sidebar-primary-foreground">ChaseFlow</span>
+            </Link>
+            <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
+              <SheetTrigger asChild>
+                <button
+                  aria-label="Open menu"
+                  className="h-9 w-9 inline-flex items-center justify-center rounded-md text-sidebar-foreground hover:bg-sidebar-accent transition-colors"
+                >
+                  <Menu className="h-5 w-5" />
+                </button>
+              </SheetTrigger>
+              <SheetContent side="left" className="w-72 p-0 bg-sidebar flex flex-col border-sidebar-border">
+                <SidebarBody inDrawer />
+              </SheetContent>
+            </Sheet>
+          </header>
+        )}
+
+        <div className="p-4 sm:p-6 md:p-8">{children}</div>
       </main>
     </div>
   );
