@@ -191,6 +191,9 @@ export default function AdminSchedulerReportPage() {
               </tbody>
             </table>
           </div>
+          {runs.length > 0 && (
+            <TablePagination page={page} pageSize={pageSize} total={runs.length} onPageChange={setPage} onPageSizeChange={setPageSize} />
+          )}
         </div>
       </div>
     </DashboardLayout>
