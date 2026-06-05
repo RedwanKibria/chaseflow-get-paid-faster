@@ -25,6 +25,8 @@ export default function AdminSystemLogsPage() {
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
   const [userEmailMap, setUserEmailMap] = useState<Map<string, string>>(new Map());
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
 
   const invoiceMap = useMemo(() => new Map(invoices.map(i => [i.id, i.invoice_code])), [invoices]);
 
