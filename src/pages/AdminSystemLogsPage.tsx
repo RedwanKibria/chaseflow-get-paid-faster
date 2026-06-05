@@ -126,7 +126,7 @@ export default function AdminSystemLogsPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(log => (
+                {paged.map(log => (
                   <tr key={log.id} className="border-b border-border last:border-0 hover:bg-muted/30 transition-colors">
                     <td className="p-3 text-muted-foreground font-mono text-xs">{log.log_code || '—'}</td>
                     <td className="p-3 text-muted-foreground text-xs">{log.actor_user_id ? (userEmailMap.get(log.actor_user_id) || log.actor_user_id.slice(0, 8)) : '—'}</td>
