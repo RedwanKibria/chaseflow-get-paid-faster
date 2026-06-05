@@ -81,6 +81,10 @@ export default function AdminInvoiceReportsPage() {
     });
   }, [rows, search, filterStatus]);
 
+  useEffect(() => { setPage(1); }, [search, filterStatus]);
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
+
   const exportData = useMemo(() => {
     return filtered.map(r => ({
       'Invoice Code': r.invoice_code ?? '',
