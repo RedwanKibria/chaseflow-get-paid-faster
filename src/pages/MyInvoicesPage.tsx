@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -10,6 +10,7 @@ import { Check, Download, Search, XCircle, Trash2, CheckCircle2, X, FileSpreadsh
 import { downloadInvoicePdf } from '@/lib/invoiceStorage';
 import { getCurrencySymbol } from '@/lib/currency';
 import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
+import TablePagination from '@/components/TablePagination';
 
 const statusBadge = (status: string) => {
   const map: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
