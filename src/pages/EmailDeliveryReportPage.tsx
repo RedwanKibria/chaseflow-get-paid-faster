@@ -98,6 +98,10 @@ export default function EmailDeliveryReportPage({ adminMode = false }: Props) {
     return true;
   }), [rows, search, statusFilter, sentFilter]);
 
+  useEffect(() => { setPage(1); }, [search, statusFilter, sentFilter]);
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
+
   const exportData = useMemo(() => filtered.map(r => ({
     'Client Name': r.client_name ?? '',
     'Client Company': r.client_company ?? '',
