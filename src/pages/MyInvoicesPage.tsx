@@ -54,6 +54,9 @@ export default function MyInvoicesPage() {
     });
   }, [invoices, filterName, filterCompany, filterDateFrom, filterDateTo, filterStatus]);
 
+  useEffect(() => { setPage(1); }, [filterName, filterCompany, filterDateFrom, filterDateTo, filterStatus]);
+  const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
+
   const toggleSelect = (id: string) => {
     setSelected(prev => {
       const next = new Set(prev);
