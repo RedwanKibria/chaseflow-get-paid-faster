@@ -25,10 +25,11 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children, permKey }: { children: React.ReactNode; permKey?: string }) {
-  const { isAuthenticated, loading, isActive, permissions } = useApp();
+  const { isAuthenticated, loading, isActive, userAccess, permissions } = useApp();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!isActive) return (
+  // Only treat as inactive when we have a loaded access row that says so.
+  if (userAccess && !isActive) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center space-y-2">
         <h2 className="text-xl font-bold text-foreground">Account Inactive</h2>
@@ -42,6 +43,7 @@ function ProtectedRoute({ children, permKey }: { children: React.ReactNode; perm
   return <>{children}</>;
 }
 
+
 function AppRoutes() {
   return (
     <Routes>
@@ -52,7 +54,10 @@ function AppRoutes() {
       <Route path="/create-invoice" element={<ProtectedRoute permKey="create_invoice"><CreateInvoicePage type="regular" /></ProtectedRoute>} />
       <Route path="/create-invoice-hourly" element={<ProtectedRoute permKey="create_invoice"><CreateInvoicePage type="hourly" /></ProtectedRoute>} />
       <Route path="/invoices" element={<ProtectedRoute permKey="my_invoices"><MyInvoicesPage /></ProtectedRoute>} />
+      <Route path="/invoices" element={<ProtectedRoute permKey="my_invoices"><MyInvoicesPage /></ProtectedRoute>} />
+      <Route path="/my-invoices" element={<Navigate to="/invoices" replace />} />
       <Route path="/activity" element={<ProtectedRoute permKey="activity_logs"><ActivityLogsPage /></ProtectedRoute>} />
+
       <Route path="/pro" element={<ProtectedRoute permKey="pro_plan"><ProPlanPage /></ProtectedRoute>} />
       <Route path="/settings" element={<ProtectedRoute permKey="settings"><SettingsPage /></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute permKey="admin_user_management"><AdminUserManagementPage /></ProtectedRoute>} />
