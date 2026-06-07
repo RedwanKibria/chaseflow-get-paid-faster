@@ -25,10 +25,11 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children, permKey }: { children: React.ReactNode; permKey?: string }) {
-  const { isAuthenticated, loading, isActive, permissions } = useApp();
+  const { isAuthenticated, loading, isActive, userAccess, permissions } = useApp();
   if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
   if (!isAuthenticated) return <Navigate to="/login" replace />;
-  if (!isActive) return (
+  // Only treat as inactive when we have a loaded access row that says so.
+  if (userAccess && !isActive) return (
     <div className="min-h-screen flex items-center justify-center">
       <div className="text-center space-y-2">
         <h2 className="text-xl font-bold text-foreground">Account Inactive</h2>
@@ -41,6 +42,7 @@ function ProtectedRoute({ children, permKey }: { children: React.ReactNode; perm
   }
   return <>{children}</>;
 }
+
 
 function AppRoutes() {
   return (
