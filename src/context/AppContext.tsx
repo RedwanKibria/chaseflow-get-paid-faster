@@ -50,26 +50,32 @@ export function AppProvider({ children }: { children: ReactNode }) {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, sess) => {
       setSession(sess);
       if (sess?.user) {
-        setTimeout(() => fetchProfile(sess.user.id, sess.user.email ?? ''), 0);
+        setLoading(true);
+        setTimeout(() => {
+          fetchProfile(sess.user.id, sess.user.email ?? '').finally(() => setLoading(false));
+        }, 0);
       } else {
         setUser(null);
         setUserAccess(null);
         setPermissions(null);
         setInvoices([]);
         setActivityLogs([]);
+        setLoading(false);
       }
     });
 
     supabase.auth.getSession().then(({ data: { session: sess } }) => {
       setSession(sess);
       if (sess?.user) {
-        fetchProfile(sess.user.id, sess.user.email ?? '');
+        fetchProfile(sess.user.id, sess.user.email ?? '').finally(() => setLoading(false));
+      } else {
+        setLoading(false);
       }
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
 
   const fetchProfile = async (uid: string, email: string) => {
     const [{ data: profile }, { data: access }, { data: perms }] = await Promise.all([
