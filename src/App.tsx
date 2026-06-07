@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AppProvider, useApp } from "@/context/AppContext";
+import { FullPageSpinner } from "@/components/Spinner";
+
 import LandingPage from "./pages/LandingPage";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
@@ -26,7 +28,8 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children, permKey }: { children: React.ReactNode; permKey?: string }) {
   const { isAuthenticated, loading, isActive, userAccess, permissions } = useApp();
-  if (loading) return <div className="min-h-screen flex items-center justify-center text-muted-foreground">Loading…</div>;
+  if (loading) return <FullPageSpinner label="Loading your workspace…" />;
+
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   // Only treat as inactive when we have a loaded access row that says so.
   if (userAccess && !isActive) return (
