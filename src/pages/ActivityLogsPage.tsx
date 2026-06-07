@@ -2,8 +2,16 @@ import { useState, useMemo, useEffect } from 'react';
 import { useApp } from '@/context/AppContext';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Search, X } from 'lucide-react';
 import TablePagination from '@/components/TablePagination';
+
+const PRESETS: { key: string; label: string; days: number | null }[] = [
+  { key: 'all', label: 'All time', days: null },
+  { key: 'today', label: 'Today', days: 0 },
+  { key: '7d', label: 'Last 7 days', days: 7 },
+  { key: '30d', label: 'Last 30 days', days: 30 },
+];
 
 export default function ActivityLogsPage() {
   const { activityLogs, invoices, user } = useApp();
@@ -12,27 +20,48 @@ export default function ActivityLogsPage() {
   const [filterAction, setFilterAction] = useState('');
   const [filterDateFrom, setFilterDateFrom] = useState('');
   const [filterDateTo, setFilterDateTo] = useState('');
+  const [preset, setPreset] = useState('all');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
 
-  // Restrict to user's own actions only — exclude system/admin actions where user is only "related"
   const ownLogs = useMemo(
     () => activityLogs.filter(l => l.actor_user_id === user?.id),
     [activityLogs, user?.id]
   );
 
-  const actionTypes = useMemo(() => [...new Set(ownLogs.map(l => l.action_type))], [ownLogs]);
+  const actionTypes = useMemo(() => [...new Set(ownLogs.map(l => l.action_type))].sort(), [ownLogs]);
+
+  const applyPreset = (key: string) => {
+    setPreset(key);
+    const p = PRESETS.find(x => x.key === key);
+    if (!p || p.days === null) { setFilterDateFrom(''); setFilterDateTo(''); return; }
+    const today = new Date();
+    const to = today.toISOString().split('T')[0];
+    const from = new Date(today.getTime() - p.days * 86400000).toISOString().split('T')[0];
+    setFilterDateFrom(from); setFilterDateTo(to);
+  };
+
+  const clearAll = () => {
+    setSearch(''); setFilterAction(''); setFilterDateFrom(''); setFilterDateTo(''); setPreset('all');
+  };
+
+  const hasFilters = !!(search || filterAction || filterDateFrom || filterDateTo);
 
   const filtered = useMemo(() => {
+    const q = search.toLowerCase().trim();
     return ownLogs.filter(log => {
-      if (search && !log.description.toLowerCase().includes(search.toLowerCase()) && !(log.log_code ?? '').toLowerCase().includes(search.toLowerCase())) return false;
+      if (q) {
+        const code = (invoiceMap.get(log.invoice_id ?? '') ?? '').toLowerCase();
+        const hay = `${log.description} ${log.log_code ?? ''} ${log.action_type} ${code}`.toLowerCase();
+        if (!hay.includes(q)) return false;
+      }
       if (filterAction && log.action_type !== filterAction) return false;
       const logDate = log.created_at.split('T')[0];
       if (filterDateFrom && logDate < filterDateFrom) return false;
       if (filterDateTo && logDate > filterDateTo) return false;
       return true;
     });
-  }, [ownLogs, search, filterAction, filterDateFrom, filterDateTo]);
+  }, [ownLogs, search, filterAction, filterDateFrom, filterDateTo, invoiceMap]);
 
   useEffect(() => { setPage(1); }, [search, filterAction, filterDateFrom, filterDateTo]);
   const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
@@ -43,11 +72,11 @@ export default function ActivityLogsPage() {
         <h1 className="text-2xl font-bold text-foreground mb-1">Activity Logs</h1>
         <p className="text-muted-foreground mb-6 md:mb-8 text-sm md:text-base">Your personal activity history</p>
 
-        <div className="bg-card rounded-xl p-4 md:p-5 shadow-card mb-6">
-          <div className="flex flex-col md:flex-row md:flex-wrap gap-3 md:gap-4">
+        <div className="bg-card rounded-xl p-4 md:p-5 shadow-card mb-6 space-y-3">
+          <div className="flex flex-col md:flex-row md:flex-wrap gap-3">
             <div className="flex-1 min-w-[200px] relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search logs..." value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
+              <Input placeholder="Search description, invoice code, action…" value={search} onChange={e => setSearch(e.target.value)} className="pl-9" />
             </div>
             <select
               value={filterAction}
@@ -58,12 +87,32 @@ export default function ActivityLogsPage() {
               {actionTypes.map(a => <option key={a} value={a}>{a.replace(/_/g, ' ')}</option>)}
             </select>
             <div className="flex items-center gap-2">
-              <Input type="date" value={filterDateFrom} onChange={e => setFilterDateFrom(e.target.value)} className="flex-1 md:w-40" />
+              <Input type="date" value={filterDateFrom} onChange={e => { setFilterDateFrom(e.target.value); setPreset(''); }} className="flex-1 md:w-40" />
               <span className="text-muted-foreground text-sm">to</span>
-              <Input type="date" value={filterDateTo} onChange={e => setFilterDateTo(e.target.value)} className="flex-1 md:w-40" />
+              <Input type="date" value={filterDateTo} onChange={e => { setFilterDateTo(e.target.value); setPreset(''); }} className="flex-1 md:w-40" />
+            </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            {PRESETS.map(p => (
+              <button
+                key={p.key}
+                onClick={() => applyPreset(p.key)}
+                className={`px-3 py-1 rounded-full text-xs font-medium border transition-colors ${preset === p.key ? 'bg-primary text-primary-foreground border-primary' : 'bg-background text-muted-foreground border-border hover:bg-muted'}`}
+              >
+                {p.label}
+              </button>
+            ))}
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">{filtered.length} result{filtered.length === 1 ? '' : 's'}</span>
+              {hasFilters && (
+                <Button variant="ghost" size="sm" onClick={clearAll} className="h-7 px-2 text-xs">
+                  <X className="h-3 w-3 mr-1" /> Clear
+                </Button>
+              )}
             </div>
           </div>
         </div>
+
 
         <div className="bg-card rounded-xl shadow-card overflow-hidden">
           <div className="overflow-x-auto">
