@@ -816,32 +816,38 @@ export type Database = {
       }
       users_profile: {
         Row: {
+          branding_onboarded: boolean
           company_name: string | null
           created_at: string
           currency: string
           email: string | null
           full_name: string | null
           id: string
+          logo_path: string | null
           plan: string
           updated_at: string | null
         }
         Insert: {
+          branding_onboarded?: boolean
           company_name?: string | null
           created_at?: string
           currency?: string
           email?: string | null
           full_name?: string | null
           id: string
+          logo_path?: string | null
           plan?: string
           updated_at?: string | null
         }
         Update: {
+          branding_onboarded?: boolean
           company_name?: string | null
           created_at?: string
           currency?: string
           email?: string | null
           full_name?: string | null
           id?: string
+          logo_path?: string | null
           plan?: string
           updated_at?: string | null
         }
@@ -983,6 +989,16 @@ export type Database = {
       }
       refresh_invoice_total: {
         Args: { p_invoice_id: string }
+        Returns: undefined
+      }
+      save_workspace_profile: {
+        Args: {
+          p_branding_onboarded: boolean
+          p_company_name: string
+          p_currency: string
+          p_full_name: string
+          p_logo_path: string
+        }
         Returns: undefined
       }
       soft_delete_invoice: {
