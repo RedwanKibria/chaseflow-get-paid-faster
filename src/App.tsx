@@ -13,7 +13,6 @@ import DashboardPage from "./pages/DashboardPage";
 import CreateInvoicePage from "./pages/CreateInvoicePage";
 import MyInvoicesPage from "./pages/MyInvoicesPage";
 import ActivityLogsPage from "./pages/ActivityLogsPage";
-import ProPlanPage from "./pages/ProPlanPage";
 import SettingsPage from "./pages/SettingsPage";
 import AdminUserManagementPage from "./pages/AdminUserManagementPage";
 import AdminSystemLogsPage from "./pages/AdminSystemLogsPage";
@@ -57,11 +56,10 @@ function AppRoutes() {
       <Route path="/create-invoice" element={<ProtectedRoute permKey="create_invoice"><CreateInvoicePage type="regular" /></ProtectedRoute>} />
       <Route path="/create-invoice-hourly" element={<ProtectedRoute permKey="create_invoice"><CreateInvoicePage type="hourly" /></ProtectedRoute>} />
       <Route path="/invoices" element={<ProtectedRoute permKey="my_invoices"><MyInvoicesPage /></ProtectedRoute>} />
-      <Route path="/invoices" element={<ProtectedRoute permKey="my_invoices"><MyInvoicesPage /></ProtectedRoute>} />
       <Route path="/my-invoices" element={<Navigate to="/invoices" replace />} />
       <Route path="/activity" element={<ProtectedRoute permKey="activity_logs"><ActivityLogsPage /></ProtectedRoute>} />
 
-      <Route path="/pro" element={<ProtectedRoute permKey="pro_plan"><ProPlanPage /></ProtectedRoute>} />
+      <Route path="/pro" element={<Navigate to="/dashboard" replace />} />
       <Route path="/settings" element={<ProtectedRoute permKey="settings"><SettingsPage /></ProtectedRoute>} />
       <Route path="/admin/users" element={<ProtectedRoute permKey="admin_user_management"><AdminUserManagementPage /></ProtectedRoute>} />
       <Route path="/admin/system-logs" element={<ProtectedRoute permKey="admin_system_logs"><AdminSystemLogsPage /></ProtectedRoute>} />

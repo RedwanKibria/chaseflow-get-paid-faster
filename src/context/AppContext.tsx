@@ -14,7 +14,6 @@ interface AppContextType {
   isActive: boolean;
   invoices: Invoice[];
   activityLogs: ActivityLog[];
-  isProDemo: boolean;
   loading: boolean;
   login: (email: string, password: string) => Promise<string | null>;
   signup: (name: string, email: string, password: string) => Promise<string | null>;
@@ -25,8 +24,7 @@ interface AppContextType {
   cancelInvoice: (id: string) => Promise<void>;
   softDeleteInvoice: (id: string) => Promise<void>;
   addLog: (log: { invoice_id?: string | null; action_type: string; description: string }) => void;
-  setProDemo: (v: boolean) => void;
-  updateUser: (u: Partial<User>) => void;
+  updateUser: (u: Partial<User>) => Promise<void>;
   refreshInvoices: () => Promise<void>;
   refreshLogs: () => Promise<void>;
 }
@@ -40,7 +38,6 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [activityLogs, setActivityLogs] = useState<ActivityLog[]>([]);
-  const [isProDemo, setIsProDemo] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const isAdmin = userAccess?.role === 'admin';
@@ -90,6 +87,8 @@ export function AppProvider({ children }: { children: ReactNode }) {
       email: profile?.email ?? email,
       company_name: profile?.company_name ?? null,
       currency: (profile as any)?.currency ?? 'GBP',
+      logo_path: profile?.logo_path ?? null,
+      branding_onboarded: profile?.branding_onboarded ?? false,
       plan: (profile?.plan as 'free' | 'pro') ?? 'free',
       created_at: profile?.created_at ?? new Date().toISOString(),
     });
@@ -119,10 +118,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
     if (!invRows) return;
 
     const invIds = invRows.map(i => i.id);
-    const { data: itemRows } = await supabase
+    const { data: itemRows } = invIds.length ? await supabase
       .from('invoice_items')
       .select('*')
-      .in('invoice_id', invIds.length ? invIds : ['__none__']);
+      .in('invoice_id', invIds) : { data: [] };
 
     const itemsByInvoice = (itemRows ?? []).reduce<Record<string, any[]>>((acc, item) => {
       (acc[item.invoice_id] ??= []).push(item);
@@ -370,11 +369,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
 
   const updateUser = useCallback(async (u: Partial<User>) => {
     if (!session?.user) return;
-    await supabase.rpc('update_my_profile', {
+    const { error } = await supabase.rpc('save_workspace_profile', {
       p_full_name: u.full_name ?? user?.full_name ?? '',
       p_company_name: u.company_name ?? user?.company_name ?? '',
       p_currency: u.currency ?? user?.currency ?? 'GBP',
+      p_logo_path: u.logo_path === undefined ? user?.logo_path ?? null : u.logo_path,
+      p_branding_onboarded: u.branding_onboarded ?? user?.branding_onboarded ?? false,
     });
+    if (error) throw error;
     setUser(prev => prev ? { ...prev, ...u } : prev);
   }, [session, user]);
 
@@ -388,11 +390,10 @@ export function AppProvider({ children }: { children: ReactNode }) {
       isActive,
       invoices,
       activityLogs,
-      isProDemo,
       loading,
       login, signup, logout,
       addInvoice, updateInvoice, markAsPaid, cancelInvoice, softDeleteInvoice,
-      addLog, setProDemo: setIsProDemo, updateUser,
+      addLog, updateUser,
       refreshInvoices, refreshLogs,
     }}>
       {children}
