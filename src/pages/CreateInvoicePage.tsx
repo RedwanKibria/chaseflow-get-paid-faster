@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Trash2, Plus, Send, CalendarClock } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { resolveLogo } from '@/lib/branding';
 
 interface CreateInvoiceProps {
   type: 'regular' | 'hourly';
@@ -17,6 +18,12 @@ interface CreateInvoiceProps {
 
 export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
   const { addInvoice, user } = useApp();
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  useEffect(() => {
+    let live = true; let url: string | null = null;
+    resolveLogo(user?.logo_path).then(value => { url = value; if (live) setLogoPreview(value); else if (value) URL.revokeObjectURL(value); }).catch(() => setLogoPreview(null));
+    return () => { live = false; if (url) URL.revokeObjectURL(url); };
+  }, [user?.logo_path]);
   const cs = getCurrencySymbol(user?.currency || 'GBP');
   const [clientName, setClientName] = useState('');
   const [clientEmail, setClientEmail] = useState('');
@@ -99,7 +106,7 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
     reminder_after_3: reminders.after_3,
     reminder_after_7: reminders.after_7,
     reminder_after_14: reminders.after_14,
-    logo_url: null,
+    logo_url: user?.logo_path ?? null,
     items: items.map((item, i) => ({
       id: '', invoice_id: '',
       item_no: i + 1,
@@ -137,8 +144,9 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
       return;
     }
     setSaving('reminder');
-    await addInvoice(buildInvoicePayload());
+    const id = await addInvoice(buildInvoicePayload());
     setSaving(null);
+    if (!id) { toast.error('Failed to save invoice. Your entries have been kept.'); return; }
     setSaved(true);
     setTimeout(() => setSaved(false), 5000);
     const enabled = reminderScheduleText();
@@ -367,9 +375,9 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
             <div className="border-b border-border pb-6 mb-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
+                  {logoPreview ? <img src={logoPreview} alt="Invoice logo" className="h-16 w-32 object-contain mb-2" /> : <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center mb-2">
                     <span className="text-primary font-bold text-lg">C</span>
-                  </div>
+                  </div>}
                   <p className="text-sm text-muted-foreground">{yourCompanyName || 'Your Business Name'}</p>
                 </div>
                 <div className="text-right">

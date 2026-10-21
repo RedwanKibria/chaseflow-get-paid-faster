@@ -49,7 +49,6 @@ const permKeys: { key: keyof Perms; label: string }[] = [
   { key: 'create_invoice', label: 'Create Invoice' },
   { key: 'my_invoices', label: 'My Invoices' },
   { key: 'activity_logs', label: 'Activity Logs' },
-  { key: 'pro_plan', label: 'Pro Plan' },
   { key: 'settings', label: 'Settings' },
   { key: 'review_feedback', label: 'Help ChaseFlow Improve' },
   { key: 'admin_user_management', label: 'Admin: User Management' },
@@ -86,7 +85,7 @@ export default function AdminUserManagementPage() {
 
   useEffect(() => {
     fetchUsers();
-    supabase.from('survey_questions').select('id, question_text, question_order').order('question_order').then(({ data }) => {
+    supabase.from('survey_questions').select('id, question_text, question_order').eq('is_active', true).order('question_order').then(({ data }) => {
       if (data) setSurveyQuestions(data as SurveyQuestion[]);
     });
   }, []);
@@ -117,7 +116,7 @@ export default function AdminUserManagementPage() {
   };
 
   const getPermValue = (key: keyof Perms): boolean => {
-    if (key in dirtyPerms) return dirtyPerms[key]!;
+    if (key in dirtyPerms) return dirtyPerms[key] ?? false;
     return perms ? perms[key] : true;
   };
 
@@ -135,12 +134,13 @@ export default function AdminUserManagementPage() {
     try {
       // Save page permissions
       for (const [key, val] of Object.entries(dirtyPerms)) {
-        await supabase.rpc('admin_set_user_permission', { p_user_id: editUser.id, p_permission_key: key, p_enabled: val });
+        const { error } = await supabase.rpc('admin_set_user_permission', { p_user_id: editUser.id, p_permission_key: key, p_enabled: val });
+        if (error) throw error;
       }
       // Save survey question permissions via admin RPC (upsert, dedup-safe)
       for (const [questionId, val] of Object.entries(dirtySurveyPerms)) {
         const existing = surveyPerms.find(p => p.survey_question_id === questionId);
-        const canAnswer = existing?.can_view === false ? false : val; // keep answer aligned with view
+        const canAnswer = val;
         const { error } = await supabase.rpc('admin_set_survey_question_permission', {
           p_user_id: editUser.id,
           p_survey_question_id: questionId,

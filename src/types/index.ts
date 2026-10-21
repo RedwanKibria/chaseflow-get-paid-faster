@@ -4,6 +4,8 @@ export interface User {
   email: string;
   company_name: string | null;
   currency: string;
+  logo_path?: string | null;
+  branding_onboarded?: boolean;
   plan: 'free' | 'pro';
   created_at: string;
 }

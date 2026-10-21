@@ -1,6 +1,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { generateInvoicePdf } from './generateInvoicePdf';
 import type { Invoice } from '@/types';
+import { invoiceLogoData } from './branding';
 
 export async function generateAndUploadInvoicePdf(invoice: Invoice, currencySymbol: string = '£'): Promise<{ path: string; name: string } | null> {
   try {
@@ -11,6 +12,13 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice, currencySymb
     const pageWidth = doc.internal.pageSize.getWidth();
     const margin = 20;
     let y = 20;
+    if (invoice.logo_url) {
+      const logo = await invoiceLogoData(invoice.logo_url);
+      const props = doc.getImageProperties(logo);
+      const width = Math.min(40, 18 * props.width / props.height);
+      doc.addImage(logo, 'PNG', margin, y, width, width * props.height / props.width);
+      y += 24;
+    }
 
     doc.setFontSize(24);
     doc.setFont('helvetica', 'bold');
@@ -22,7 +30,7 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice, currencySymb
     doc.text(invoice.your_company_name || 'ChaseFlow', margin, y);
     y += 8;
     doc.setFontSize(9);
-    doc.text(invoice.invoice_code, margin, y);
+    doc.text(invoice.invoice_code || (invoice as any).invoice_number || invoice.id, margin, y);
     doc.text(`Type: ${invoice.invoice_type === 'hourly' ? 'Hourly' : 'Regular'}`, pageWidth - margin, y, { align: 'right' });
     y += 4;
 
@@ -160,7 +168,7 @@ export async function downloadInvoicePdf(invoice: Invoice, currencySymbol: strin
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 30000);
       return;
     }
   }

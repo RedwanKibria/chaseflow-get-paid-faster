@@ -5,6 +5,7 @@ import { useApp } from '@/context/AppContext';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useIsMobile } from '@/hooks/use-mobile';
+import BrandingOnboarding from '@/components/BrandingOnboarding';
 
 const SIDEBAR_KEY = 'chaseflow_sidebar_collapsed';
 
@@ -34,7 +35,6 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
     { to: '/email-delivery', label: 'Email Delivery', icon: Mail, perm: permissions?.my_invoices },
     { to: '/activity', label: 'Activity Logs', icon: Activity, perm: permissions?.activity_logs },
     { to: '/review-feedback', label: 'Help ChaseFlow Improve', icon: MessageSquare, perm: permissions?.review_feedback },
-    { to: '/pro', label: 'Pro Plan', icon: Crown, perm: permissions?.pro_plan },
     { to: '/settings', label: 'Settings', icon: Settings, perm: permissions?.settings },
   ];
 
@@ -139,6 +139,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <div className="flex min-h-screen bg-surface">
+      <BrandingOnboarding />
       {/* Desktop sidebar */}
       {!isMobile && (
         <aside className={`${collapsed ? 'w-16' : 'w-64'} bg-sidebar flex flex-col shrink-0 transition-all duration-200 relative`}>

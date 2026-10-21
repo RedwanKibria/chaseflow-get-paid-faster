@@ -1,12 +1,20 @@
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import type { Invoice } from '@/types';
+import { invoiceLogoData } from './branding';
 
-export function generateInvoicePdf(invoice: Invoice, currencySymbol: string = '£') {
+export async function generateInvoicePdf(invoice: Invoice, currencySymbol: string = '£') {
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const margin = 20;
   let y = 20;
+  if (invoice.logo_url) {
+    const logo = await invoiceLogoData(invoice.logo_url);
+    const props = doc.getImageProperties(logo);
+    const width = Math.min(40, 18 * props.width / props.height);
+    doc.addImage(logo, 'PNG', margin, y, width, width * props.height / props.width);
+    y += 24;
+  }
 
   doc.setFontSize(24);
   doc.setFont('helvetica', 'bold');
