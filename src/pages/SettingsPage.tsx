@@ -5,14 +5,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Badge } from '@/components/ui/badge';
+import BrandingFields from '@/components/BrandingFields';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
-
-interface Subscription {
-  plan: string;
-  status: string;
-  renews_at: string | null;
-}
 
 const CURRENCIES = [
   { code: 'GBP', label: '£ (GBP) — British Pound' },
@@ -73,19 +68,9 @@ export default function SettingsPage() {
   const [companyName, setCompanyName] = useState(user?.company_name || '');
   const [currency, setCurrency] = useState(user?.currency || 'GBP');
   const [saved, setSaved] = useState(false);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-
-  useEffect(() => {
-    if (!user) return;
-    supabase
-      .from('subscriptions')
-      .select('plan, status, renews_at')
-      .eq('user_id', user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) setSubscription(data as Subscription);
-      });
-  }, [user?.id]);
+  const [logoPath, setLogoPath] = useState<string | null>(user?.logo_path ?? null);
+  const [saving, setSaving] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     if (!user) return;
@@ -102,16 +87,13 @@ export default function SettingsPage() {
   }, [user]);
 
   const handleSave = async () => {
-    // Call the updated RPC with currency
     if (!user) return;
-    await supabase.rpc('update_my_profile', {
-      p_full_name: name,
-      p_company_name: companyName,
-      p_currency: currency,
-    });
-    updateUser({ full_name: name, company_name: companyName, currency });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+    setSaving(true);
+    try {
+      await updateUser({ full_name: name, company_name: companyName, currency, logo_path: logoPath });
+      setSaved(true); setTimeout(() => setSaved(false), 2000);
+    } catch (error) { toast.error(error instanceof Error ? error.message : 'Could not save settings'); }
+    finally { setSaving(false); }
   };
 
   return (
@@ -129,7 +111,7 @@ export default function SettingsPage() {
         <div className="space-y-6">
           <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
             <h3 className="font-semibold text-foreground">Profile</h3>
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
                 <Label>Full Name</Label>
                 <Input value={name} onChange={e => setName(e.target.value)} />
@@ -160,43 +142,12 @@ export default function SettingsPage() {
             </select>
           </div>
 
-          <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
-            <h3 className="font-semibold text-foreground">Default Reminder Preferences</h3>
-            <div className="space-y-3">
-              {['3 days before due date', 'On due date', '3 days after due date', '7 days after due date', '14 days after due date'].map((label, i) => (
-                <label key={i} className="flex items-center gap-2 text-sm cursor-pointer">
-                  <Checkbox defaultChecked={i < 2} />
-                  {label}
-                </label>
-              ))}
-            </div>
-          </div>
+          {user && <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
+            <h3 className="font-semibold text-foreground">Invoice Branding</h3>
+            <BrandingFields userId={user.id} companyName={companyName} onCompanyNameChange={setCompanyName} logoPath={logoPath} onLogoChange={setLogoPath} onBusyChange={setUploading} />
+          </div>}
 
-          <div className="bg-card rounded-xl p-6 shadow-card space-y-4">
-            <h3 className="font-semibold text-foreground">Plan & Billing</h3>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Current Plan:</span>
-                <Badge variant={subscription?.plan === 'pro' ? 'default' : 'secondary'}>
-                  {subscription?.plan === 'pro' ? 'Pro' : 'Free'}
-                </Badge>
-              </div>
-              <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Status:</span>
-                <Badge variant={subscription?.status === 'active' ? 'default' : 'outline'}>
-                  {subscription?.status || 'inactive'}
-                </Badge>
-              </div>
-              {subscription?.renews_at && (
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-muted-foreground">Renews:</span>
-                  <span className="text-sm text-foreground">{new Date(subscription.renews_at).toLocaleDateString()}</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <Button onClick={handleSave} className="w-full">Save Changes</Button>
+          <Button onClick={handleSave} disabled={saving || uploading} className="w-full">{saving ? 'Saving…' : 'Save Changes'}</Button>
         </div>
       </div>
     </DashboardLayout>
