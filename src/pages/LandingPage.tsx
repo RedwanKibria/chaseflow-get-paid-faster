@@ -82,7 +82,7 @@ export default function LandingPage() {
       <section className="py-20 gradient-hero">
         <div className="container mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold text-primary-foreground mb-4">Ready to get paid faster?</h2>
-          <p className="text-primary-foreground/80 mb-8 max-w-lg mx-auto">Join thousands of freelancers and small businesses who've streamlined their invoicing.</p>
+          <p className="text-primary-foreground/80 mb-8 max-w-lg mx-auto">Built for freelancers and small businesses who are tired of chasing payments.</p>
           <Link to="/signup"><Button size="lg" variant="secondary" className="h-12 px-8">Start Free Today</Button></Link>
         </div>
       </section>

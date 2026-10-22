@@ -164,6 +164,11 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
     if (!id) { setSaving(null); toast.error('Failed to save invoice'); return; }
     const { data, error } = await supabase.functions.invoke('send-invoice-now', { body: { invoice_id: id } });
     setSaving(null);
+    if (error?.context instanceof Response && error.context.status === 429) {
+      const response = await error.context.clone().json().catch(() => ({}));
+      toast.error(response.error || response.message || 'Sending limit reached. Please try again later.');
+      return;
+    }
     if (error || (data as any)?.error) {
       toast.error('Invoice saved but email send failed', { description: String(error?.message || (data as any)?.error || 'Unknown error') });
       return;
@@ -172,10 +177,14 @@ export default function CreateInvoicePage({ type }: CreateInvoiceProps) {
     setTimeout(() => setSaved(false), 5000);
     const enabled = reminderScheduleText();
     const future = enabled.length ? ` Future reminders: ${enabled.join(', ')} (past dates skipped).` : '';
-    toast.success(`Invoice sent now to ${clientEmail}`, {
-      description: `PDF emailed immediately.${future}`,
-      duration: 7000,
-    });
+    if (data?.attached === false) {
+      toast.warning('Invoice sent, but the PDF could not be attached. Open My Invoices to download and resend it.');
+    } else {
+      toast.success(`Invoice sent now to ${clientEmail}`, {
+        description: `PDF emailed immediately.${future}`,
+        duration: 7000,
+      });
+    }
     resetForm();
   };
 
