@@ -57,6 +57,24 @@ Deno.serve(async (req) => {
     if (invoice.user_id !== user.id) return new Response(JSON.stringify({ error: "Forbidden" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     if (!invoice.client_email) return new Response(JSON.stringify({ error: "No client email on invoice" }), { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } });
 
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const [userSends, invoiceSends] = await Promise.all([
+      supabase.from("activity_logs").select("id", { count: "exact", head: true })
+        .eq("user_id", user.id).eq("action_type", "invoice_sent_now").gte("created_at", since),
+      supabase.from("activity_logs").select("id", { count: "exact", head: true })
+        .eq("user_id", user.id).eq("invoice_id", invoice.id)
+        .eq("action_type", "invoice_sent_now").gte("created_at", since),
+    ]);
+    if (userSends.error || invoiceSends.error) {
+      return new Response(JSON.stringify({ error: "Could not check sending limits. Please try again later." }), { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if ((userSends.count ?? 0) >= 20) {
+      return new Response(JSON.stringify({ error: "You have reached the limit of 20 invoice sends in the last 24 hours. Please try again later." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+    if ((invoiceSends.count ?? 0) >= 3) {
+      return new Response(JSON.stringify({ error: "This invoice has already been sent 3 times in the last 24 hours. Please try again later." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+    }
+
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     const RESEND_API_KEY = Deno.env.get("RESEND_API_KEY");
     if (!LOVABLE_API_KEY || !RESEND_API_KEY) {
