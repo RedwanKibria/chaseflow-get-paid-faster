@@ -1,4 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
+import { formatAmount } from './currency';
 import { generateInvoicePdf } from './generateInvoicePdf';
 import type { Invoice } from '@/types';
 import { invoiceLogoData } from './branding';
@@ -80,8 +81,8 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice, currencySymb
         String(idx + 1),
         item.description || '—',
         String(isHourly ? item.hours : item.quantity),
-        (isHourly ? item.hourly_rate : item.unit_amount).toLocaleString(),
-        item.item_total.toLocaleString(),
+        formatAmount(isHourly ? item.hourly_rate : item.unit_amount),
+        formatAmount(item.item_total),
       ]),
       margin: { left: margin, right: margin },
       headStyles: { fillColor: [245, 245, 245], textColor: [80, 80, 80], fontStyle: 'bold', fontSize: 9 },
@@ -97,14 +98,14 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice, currencySymb
     doc.setTextColor(100, 100, 100);
     doc.text('Subtotal:', totalsX - 40, y);
     doc.setTextColor(40, 40, 40);
-    doc.text(`${currencySymbol}${invoice.subtotal_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
+    doc.text(`${currencySymbol}${formatAmount(invoice.subtotal_amount)}`, totalsX, y, { align: 'right' });
     y += 6;
 
     if (invoice.vat_percent > 0) {
       doc.setTextColor(100, 100, 100);
       doc.text(`VAT (${invoice.vat_percent}%):`, totalsX - 40, y);
       doc.setTextColor(40, 40, 40);
-      doc.text(`${currencySymbol}${invoice.vat_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
+      doc.text(`${currencySymbol}${formatAmount(invoice.vat_amount)}`, totalsX, y, { align: 'right' });
       y += 6;
     }
 
@@ -112,7 +113,7 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice, currencySymb
       doc.setTextColor(100, 100, 100);
       doc.text(`TAX (${invoice.tax_percent}%):`, totalsX - 40, y);
       doc.setTextColor(40, 40, 40);
-      doc.text(`${currencySymbol}${invoice.tax_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
+      doc.text(`${currencySymbol}${formatAmount(invoice.tax_amount)}`, totalsX, y, { align: 'right' });
       y += 6;
     }
 
@@ -122,7 +123,7 @@ export async function generateAndUploadInvoicePdf(invoice: Invoice, currencySymb
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(14);
     doc.setTextColor(20, 20, 20);
-    doc.text(`${currencySymbol}${invoice.total_amount.toLocaleString()}`, totalsX, y, { align: 'right' });
+    doc.text(`${currencySymbol}${formatAmount(invoice.total_amount)}`, totalsX, y, { align: 'right' });
 
     if (invoice.status === 'paid' || invoice.status === 'cancelled') {
       doc.setFontSize(48);

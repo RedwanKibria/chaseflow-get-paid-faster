@@ -94,7 +94,7 @@ export default function LandingPage() {
             <Zap className="h-4 w-4" /> ChaseFlow © 2026
           </div>
           <div className="flex gap-6 text-sm text-muted-foreground">
-            <span>Privacy</span><span>Terms</span><span>Support</span>
+            <Link to="/privacy" className="hover:text-foreground">Privacy</Link><Link to="/terms" className="hover:text-foreground">Terms</Link>
           </div>
         </div>
       </footer>

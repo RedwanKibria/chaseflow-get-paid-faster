@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { downloadInvoicePdf } from '@/lib/invoiceStorage';
 import { getCurrencySymbol } from '@/lib/currency';
+import FirstRunChecklist from '@/components/FirstRunChecklist';
 
 const statusBadge = (status: string) => {
   const map: Record<string, { variant: 'default' | 'secondary' | 'destructive' | 'outline'; label: string }> = {
@@ -60,6 +61,8 @@ export default function DashboardPage() {
       <div className="animate-fade-in">
         <h1 className="text-2xl font-bold text-foreground mb-1">Dashboard</h1>
         <p className="text-muted-foreground mb-8">Overview of your invoicing activity</p>
+
+        <FirstRunChecklist />
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5 mb-8">
           {kpis.map(k => (
