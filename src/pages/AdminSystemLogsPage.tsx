@@ -3,7 +3,11 @@ import DashboardLayout from '@/layouts/DashboardLayout';
 import { supabase } from '@/integrations/supabase/client';
 import { useApp } from '@/context/AppContext';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, Download, FileSpreadsheet } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
+import { fetchAllRows, chunk } from '@/lib/fetchAll';
+import { toast } from 'sonner';
 import TablePagination from '@/components/TablePagination';
 
 interface LogRow {
@@ -34,13 +38,15 @@ export default function AdminSystemLogsPage() {
     if (!isAdmin) return;
 
     // Fetch logs
-    supabase
-      .from('activity_logs')
-      .select('id, log_code, actor_user_id, related_user_id, invoice_id, action_type, description, created_at')
-      .order('created_at', { ascending: false })
-      .limit(500)
-      .then(({ data }) => {
-        const rows = (data ?? []) as LogRow[];
+    fetchAllRows<LogRow>((from, to) =>
+      supabase
+        .from('activity_logs')
+        .select('id, log_code, actor_user_id, related_user_id, invoice_id, action_type, description, created_at')
+        .order('created_at', { ascending: false })
+        .order('id')
+        .range(from, to) as any,
+    )
+      .then(async (rows) => {
         setLogs(rows);
 
         // Collect unique user IDs for actor and related
@@ -51,19 +57,17 @@ export default function AdminSystemLogsPage() {
         });
 
         if (userIds.size > 0) {
-          supabase
-            .from('users_profile')
-            .select('id, email')
-            .in('id', Array.from(userIds))
-            .then(({ data: profiles }) => {
-              const map = new Map<string, string>();
-              (profiles ?? []).forEach((p: any) => {
-                if (p.email) map.set(p.id, p.email);
-              });
-              setUserEmailMap(map);
+          const map = new Map<string, string>();
+          for (const part of chunk(Array.from(userIds), 100)) {
+            const { data: profiles } = await supabase.from('users_profile').select('id, email').in('id', part);
+            (profiles ?? []).forEach((p: any) => {
+              if (p.email) map.set(p.id, p.email);
             });
+          }
+          setUserEmailMap(map);
         }
-      });
+      })
+      .catch(() => toast.error('Could not load all system logs. Please refresh.'));
   }, [isAdmin]);
 
   const actionTypes = useMemo(() => [...new Set(logs.map(l => l.action_type))], [logs]);
@@ -83,6 +87,16 @@ export default function AdminSystemLogsPage() {
   const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
 
 
+  const exportData = useMemo(() => filtered.map(log => ({
+    'Log ID': log.log_code ?? '',
+    'Actor': log.actor_user_id ? (userEmailMap.get(log.actor_user_id) ?? log.actor_user_id) : '',
+    'Related User': log.related_user_id ? (userEmailMap.get(log.related_user_id) ?? log.related_user_id) : '',
+    'Action': log.action_type,
+    'Description': log.description,
+    'Invoice': log.invoice_id ? (invoiceMap.get(log.invoice_id) ?? '') : '',
+    'Timestamp': log.created_at,
+  })), [filtered, userEmailMap, invoiceMap]);
+
   if (!isAdmin) {
     return <DashboardLayout><div className="p-12 text-center text-muted-foreground">Admin access required.</div></DashboardLayout>;
   }
@@ -90,7 +104,17 @@ export default function AdminSystemLogsPage() {
   return (
     <DashboardLayout>
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground mb-1">System Logs</h1>
+        <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
+          <h1 className="text-2xl font-bold text-foreground">System Logs</h1>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => downloadCsv(exportData, 'system-logs')} disabled={filtered.length === 0}>
+              <Download className="h-4 w-4 mr-1" /> CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => downloadExcel(exportData, 'system-logs')} disabled={filtered.length === 0}>
+              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel (.xls)
+            </Button>
+          </div>
+        </div>
         <p className="text-muted-foreground mb-8">All system and user activity logs</p>
 
         <div className="bg-card rounded-xl p-5 shadow-card mb-6">

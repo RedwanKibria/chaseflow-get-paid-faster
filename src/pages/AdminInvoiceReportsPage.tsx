@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, CheckCircle2, X, Download, FileSpreadsheet } from 'lucide-react';
 import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
+import { fetchAllRows } from '@/lib/fetchAll';
+import { toast } from 'sonner';
 import TablePagination from '@/components/TablePagination';
 
 interface ReportRow {
@@ -62,12 +64,16 @@ export default function AdminInvoiceReportsPage() {
 
   useEffect(() => {
     if (!isAdmin) return;
-    supabase
-      .from('invoice_reports_view')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(500)
-      .then(({ data }) => setRows((data ?? []) as ReportRow[]));
+    fetchAllRows<ReportRow>((from, to) =>
+      supabase
+        .from('invoice_reports_view')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .order('id')
+        .range(from, to) as any,
+    )
+      .then(setRows)
+      .catch(() => toast.error('Could not load all invoice reports. Please refresh.'));
   }, [isAdmin]);
 
   const filtered = useMemo(() => {
@@ -128,7 +134,7 @@ export default function AdminInvoiceReportsPage() {
               <Download className="h-4 w-4 mr-1" /> CSV
             </Button>
             <Button variant="outline" size="sm" onClick={() => downloadExcel(exportData, 'invoice-report')} disabled={filtered.length === 0}>
-              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel
+              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel (.xls)
             </Button>
           </div>
         </div>

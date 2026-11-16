@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Search, CheckCircle2, X, Download, FileSpreadsheet } from 'lucide-react';
 import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
+import { fetchAllRows, chunk } from '@/lib/fetchAll';
+import { toast } from 'sonner';
 import TablePagination from '@/components/TablePagination';
 
 interface Row {
@@ -56,19 +58,28 @@ export default function EmailDeliveryReportPage({ adminMode = false }: Props) {
 
   useEffect(() => {
     const load = async () => {
-      let q = supabase
-        .from('invoices')
-        .select('id,invoice_code,client_name,client_company,total_amount,due_date,status,before_3_sent,due_sent,after_3_sent,after_7_sent,after_14_sent,user_id')
-        .eq('is_deleted', false)
-        .order('created_at', { ascending: false })
-        .limit(1000);
-      if (!adminMode && user) q = q.eq('user_id', user.id);
-      const { data } = await q;
-      let result = (data ?? []) as Row[];
+      let result: Row[];
+      try {
+        result = await fetchAllRows<Row>((from, to) => {
+          let q = supabase
+            .from('invoices')
+            .select('id,invoice_code,client_name,client_company,total_amount,due_date,status,before_3_sent,due_sent,after_3_sent,after_7_sent,after_14_sent,user_id')
+            .eq('is_deleted', false);
+          if (!adminMode && user) q = q.eq('user_id', user.id);
+          return q.order('created_at', { ascending: false }).order('id').range(from, to) as any;
+        });
+      } catch {
+        toast.error('Could not load the full email delivery report. Please refresh.');
+        return;
+      }
       if (adminMode && result.length) {
         const ids = Array.from(new Set(result.map(r => r.user_id)));
-        const { data: profs } = await supabase.from('users_profile').select('id,email,full_name').in('id', ids);
-        const map = new Map((profs ?? []).map((p: any) => [p.id, p]));
+        const profs: any[] = [];
+        for (const part of chunk(ids, 100)) {
+          const { data } = await supabase.from('users_profile').select('id,email,full_name').in('id', part);
+          profs.push(...(data ?? []));
+        }
+        const map = new Map(profs.map((p: any) => [p.id, p]));
         result = result.map(r => ({ ...r, owner_email: map.get(r.user_id)?.email, owner_name: map.get(r.user_id)?.full_name }));
       }
       setRows(result);
@@ -131,7 +142,7 @@ export default function EmailDeliveryReportPage({ adminMode = false }: Props) {
               <Download className="h-4 w-4 mr-1" /> CSV
             </Button>
             <Button variant="outline" size="sm" onClick={() => downloadExcel(exportData, 'email-delivery-report')} disabled={!filtered.length}>
-              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel
+              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel (.xls)
             </Button>
           </div>
         </div>

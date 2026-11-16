@@ -1,9 +1,13 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useApp } from '@/context/AppContext';
 import DashboardLayout from '@/layouts/DashboardLayout';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, X } from 'lucide-react';
+import { Search, X, Download, FileSpreadsheet } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
+import { fetchAllRows } from '@/lib/fetchAll';
+import { toast } from 'sonner';
 import TablePagination from '@/components/TablePagination';
 
 const PRESETS: { key: string; label: string; days: number | null }[] = [
@@ -47,9 +51,11 @@ export default function ActivityLogsPage() {
 
   const hasFilters = !!(search || filterAction || filterDateFrom || filterDateTo);
 
-  const filtered = useMemo(() => {
+  type LogLike = { description: string; log_code?: string | null; action_type: string; invoice_id?: string | null; created_at: string };
+
+  const matches = useCallback((log: LogLike) => {
     const q = search.toLowerCase().trim();
-    return ownLogs.filter(log => {
+    {
       if (q) {
         const code = (invoiceMap.get(log.invoice_id ?? '') ?? '').toLowerCase();
         const hay = `${log.description} ${log.log_code ?? ''} ${log.action_type} ${code}`.toLowerCase();
@@ -60,8 +66,44 @@ export default function ActivityLogsPage() {
       if (filterDateFrom && logDate < filterDateFrom) return false;
       if (filterDateTo && logDate > filterDateTo) return false;
       return true;
-    });
-  }, [ownLogs, search, filterAction, filterDateFrom, filterDateTo, invoiceMap]);
+    }
+  }, [search, filterAction, filterDateFrom, filterDateTo, invoiceMap]);
+
+  const filtered = useMemo(() => ownLogs.filter(matches), [ownLogs, matches]);
+
+  const [exporting, setExporting] = useState(false);
+
+  // The page shows your most recent logs; an export fetches your full history from the server.
+  const exportLogs = async (kind: 'csv' | 'xls') => {
+    if (!user) return;
+    setExporting(true);
+    try {
+      const all = await fetchAllRows<any>((from, to) =>
+        supabase
+          .from('activity_logs')
+          .select('id, log_code, log_number, action_type, description, invoice_id, created_at')
+          .eq('actor_user_id', user.id)
+          .order('created_at', { ascending: false })
+          .order('id')
+          .range(from, to) as any,
+      );
+      const rows = all
+        .map(d => ({ ...d, log_code: d.log_code ?? d.log_number ?? d.id }))
+        .filter(matches)
+        .map(d => ({
+          'Log ID': d.log_code ?? '',
+          'Action': d.action_type,
+          'Description': d.description,
+          'Invoice': d.invoice_id ? (invoiceMap.get(d.invoice_id) ?? '') : '',
+          'Timestamp': d.created_at,
+        }));
+      (kind === 'csv' ? downloadCsv : downloadExcel)(rows, 'activity-logs');
+    } catch {
+      toast.error('Could not export your activity logs. Please try again.');
+    } finally {
+      setExporting(false);
+    }
+  };
 
   useEffect(() => { setPage(1); }, [search, filterAction, filterDateFrom, filterDateTo]);
   const paged = useMemo(() => filtered.slice((page - 1) * pageSize, page * pageSize), [filtered, page, pageSize]);
@@ -69,7 +111,17 @@ export default function ActivityLogsPage() {
   return (
     <DashboardLayout>
       <div className="animate-fade-in">
-        <h1 className="text-2xl font-bold text-foreground mb-1">Activity Logs</h1>
+        <div className="flex items-center justify-between mb-1 gap-2 flex-wrap">
+          <h1 className="text-2xl font-bold text-foreground">Activity Logs</h1>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={() => exportLogs('csv')} disabled={exporting}>
+              <Download className="h-4 w-4 mr-1" /> {exporting ? 'Preparing…' : 'CSV'}
+            </Button>
+            <Button variant="outline" size="sm" onClick={() => exportLogs('xls')} disabled={exporting}>
+              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel (.xls)
+            </Button>
+          </div>
+        </div>
         <p className="text-muted-foreground mb-6 md:mb-8 text-sm md:text-base">Your personal activity history</p>
 
         <div className="bg-card rounded-xl p-4 md:p-5 shadow-card mb-6 space-y-3">
