@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import BrandingFields from '@/components/BrandingFields';
+import YourDataCard from '@/components/YourDataCard';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -148,6 +149,8 @@ export default function SettingsPage() {
           </div>}
 
           <Button onClick={handleSave} disabled={saving || uploading} className="w-full">{saving ? 'Saving…' : 'Save Changes'}</Button>
+
+          <YourDataCard />
         </div>
       </div>
     </DashboardLayout>

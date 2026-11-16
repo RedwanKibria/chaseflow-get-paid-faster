@@ -1,5 +1,6 @@
 // Sends a single invoice immediately to the client (PDF attached).
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { buildFooter } from "../_shared/emailFooter.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -19,8 +20,10 @@ function buildEmail(invoice: any) {
     `Invoice ${invoice.invoice_code} — ${invoice.your_company_name ?? "ChaseFlow"}`;
   const customBody = (invoice.email_body || "").trim();
   const fallback = `Hi ${invoice.client_name ?? "there"},\n\nPlease find your invoice attached.\n\nThank you,\n${invoice.your_company_name ?? "ChaseFlow"}`;
-  const text = customBody || fallback;
-  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#0f172a;"><div style="max-width:620px;margin:0 auto;padding:24px 20px;"><div style="font-size:14px;line-height:1.6;color:#334155;">${escapeHtml(text).replace(/\n/g, "<br/>")}</div></div></body></html>`;
+  const footer = buildFooter(invoice.your_company_name);
+  const bodyText = customBody || fallback;
+  const text = `${bodyText}\n\n--\n${footer.text}`;
+  const html = `<!DOCTYPE html><html><body style="margin:0;padding:0;background:#fff;font-family:Arial,Helvetica,sans-serif;color:#0f172a;"><div style="max-width:620px;margin:0 auto;padding:24px 20px;"><div style="font-size:14px;line-height:1.6;color:#334155;">${escapeHtml(bodyText).replace(/\n/g, "<br/>")}</div>${footer.html}</div></body></html>`;
   return { subject, html, text };
 }
 
@@ -82,8 +85,8 @@ Deno.serve(async (req) => {
     }
 
     const { subject, html, text } = buildEmail(invoice);
-    const { data: senderProfile } = await supabase.from("users_profile").select("email").eq("id", invoice.user_id).maybeSingle();
-    const replyTo = senderProfile?.email ?? null;
+    // Replies go to the verified sign-in email, not an editable profile field.
+    const replyTo = user.email ?? null;
     const attachment = await fetchAttachment(supabase, invoice);
 
     const body: any = {

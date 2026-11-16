@@ -91,6 +91,11 @@ export function downloadExcel(data: Record<string, unknown>[], filename: string)
   triggerDownload(blob, `${filename}.xls`);
 }
 
+export function downloadJson(data: unknown, filename: string) {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  triggerDownload(blob, `${filename}.json`);
+}
+
 function triggerDownload(blob: Blob, filename: string) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');

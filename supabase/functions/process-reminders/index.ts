@@ -1,6 +1,8 @@
 // Daily reminder processor: marks reminders sent and emails clients via Resend.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
 import { authenticateCronRequest } from "../_shared/cron-auth.ts";
+import { buildFooter } from "../_shared/emailFooter.ts";
+import { shouldRetryReminder } from "../_shared/retry.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,16 +29,18 @@ function buildEmailBody(invoice: any, reminderType: string) {
   const fallback = `Hi ${invoice.client_name ?? "there"},\n\nThis is a friendly reminder regarding your invoice. Please find the details below and the invoice attached.\n\nThank you,\n${invoice.your_company_name ?? "ChaseFlow"}`;
   const bodyText = customBody || fallback;
   const bodyHtml = escapeHtml(bodyText).replace(/\n/g, "<br/>");
+  const footer = buildFooter(invoice.your_company_name);
 
   const html = `<!DOCTYPE html>
 <html><body style="margin:0;padding:0;background:#ffffff;font-family:Arial,Helvetica,sans-serif;color:#0f172a;">
   <div style="max-width:620px;margin:0 auto;padding:24px 20px;">
     <div style="font-size:14px;line-height:1.6;color:#334155;">${bodyHtml}</div>
+    ${footer.html}
   </div>
 </body></html>`.trim();
 
   // Plain text mirror — keep it nearly identical to HTML so spam filters don't flag mismatch.
-  const text = bodyText;
+  const text = `${bodyText}\n\n--\n${footer.text}`;
 
   return { subject, html, text };
 }
@@ -138,8 +142,9 @@ Deno.serve(async (req) => {
         }
 
         const { subject, html, text } = buildEmailBody(invoice, job.reminder_type);
-        const { data: senderProfile } = await supabase.from("users_profile").select("email").eq("id", invoice.user_id).maybeSingle();
-        const replyTo = senderProfile?.email ?? null;
+        // Replies go to the owner's verified sign-in email, not an editable profile field.
+        const { data: ownerAuth } = await supabase.auth.admin.getUserById(invoice.user_id);
+        const replyTo = ownerAuth?.user?.email ?? null;
         const attachment = await fetchInvoiceAttachment(supabase, invoice);
         const send = await sendViaResend(invoice.client_email, replyTo, subject, html, text, attachment);
 
@@ -170,8 +175,13 @@ Deno.serve(async (req) => {
           results.push({ jobId: job.id, status: "sent", email: invoice.client_email });
         } else {
           console.error("Send failure", job.id, send.error);
-          await supabase.from("reminder_jobs").update({ status: "failed" }).eq("id", job.id);
-          results.push({ jobId: job.id, status: "failed", error: send.error });
+          if (shouldRetryReminder(job.scheduled_for, new Date())) {
+            // Leave it pending: the next daily run tries again, for up to a few days.
+            results.push({ jobId: job.id, status: "retry_later", error: send.error });
+          } else {
+            await supabase.from("reminder_jobs").update({ status: "failed" }).eq("id", job.id);
+            results.push({ jobId: job.id, status: "failed", error: send.error });
+          }
         }
       } catch (err) {
         console.error(`Job ${job.id} error`, err);

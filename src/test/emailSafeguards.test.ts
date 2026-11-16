@@ -4,6 +4,8 @@ import { resolve } from 'node:path';
 import vm from 'node:vm';
 import ts from 'typescript';
 import { describe, expect, it, vi } from 'vitest';
+import { buildFooter } from '../../supabase/functions/_shared/emailFooter';
+import { shouldRetryReminder } from '../../supabase/functions/_shared/retry';
 
 const now = Date.parse('2026-10-22T00:00:00Z');
 const invoice = { id: 'invoice-1', user_id: 'user-1', client_email: 'client@example.test', invoice_code: 'INV-1' };
@@ -25,12 +27,14 @@ function handler(name: string, options: { user?: boolean; userCount?: number; in
   const getUser = vi.fn(async () => ({ data: { user: options.user === false ? null : { id: 'user-1', email: 'owner@example.test' } }, error: null }));
   const client = { auth: { getUser }, from: query, rpc: async () => ({ error: null }) };
   let serve: ((request: Request) => Promise<Response>) | undefined;
-  const source = readFileSync(resolve(`supabase/functions/${name}/index.ts`), 'utf8').replace(/^import .*createClient.*;\s*$/m, '');
+  const source = readFileSync(resolve(`supabase/functions/${name}/index.ts`), 'utf8').replace(/^import .*;\s*$/gm, '');
   const code = ts.transpileModule(source, { compilerOptions: { target: ts.ScriptTarget.ES2022, module: ts.ModuleKind.None } }).outputText;
   class FixedDate extends Date { static now() { return now; } }
   vm.runInNewContext(code, {
     Request, Response, Date: FixedDate, console, Uint8Array, btoa,
     createClient: () => client,
+    // Shared helpers the real handlers import; supplied here because the handler source is run in isolation.
+    buildFooter, shouldRetryReminder, siteUrl: () => 'https://app.example.test',
     Deno: { env: { get: () => 'test-only-placeholder' }, serve: (fn: typeof serve) => { serve = fn; } },
     fetch: async (_url: string, init: RequestInit) => { emailBody = JSON.parse(String(init.body)); return new Response(JSON.stringify({ id: 'test-email' }), { status: 200 }); },
   });
@@ -62,4 +66,14 @@ describe('Send Now rolling limits', () => {
   });
   it('allows 19 user sends and 2 invoice sends', async () => expect((await handler('send-invoice-now', { userCount: 19, invoiceCount: 2 }).run()).status).toBe(200));
   it('keeps ownership enforcement', async () => expect((await handler('send-invoice-now', { owner: 'other-user' }).run()).status).toBe(403));
+});
+
+describe('Send Now email content', () => {
+  it('adds the "why you received this" footer and replies to the signed-in email', async () => {
+    const h = handler('send-invoice-now'); expect((await h.run()).status).toBe(200);
+    const body = h.emailBody() as { text: string; html: string; reply_to: string };
+    expect(body.text).toContain('You are receiving this email because');
+    expect(body.html).toContain('You are receiving this email because');
+    expect(body.reply_to).toBe('owner@example.test');
+  });
 });
