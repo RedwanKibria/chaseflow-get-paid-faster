@@ -21,6 +21,8 @@ import ReviewFeedbackPage from "./pages/ReviewFeedbackPage";
 import AdminSurveyReportsPage from "./pages/AdminSurveyReportsPage";
 import EmailDeliveryReportPage from "./pages/EmailDeliveryReportPage";
 import AdminSchedulerReportPage from "./pages/AdminSchedulerReportPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import ResetPasswordPage from "./pages/ResetPasswordPage";
 import TermsPage from "./pages/TermsPage";
 import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
@@ -54,6 +56,8 @@ function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/reset-password" element={<ResetPasswordPage />} />
       <Route path="/terms" element={<TermsPage />} />
       <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/dashboard" element={<ProtectedRoute permKey="dashboard"><DashboardPage /></ProtectedRoute>} />

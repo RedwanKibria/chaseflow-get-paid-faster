@@ -1,5 +1,6 @@
 // Sends a branded welcome email via Resend after a user signs up.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { siteUrl } from "../_shared/site.ts";
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -58,7 +59,7 @@ Deno.serve(async (req) => {
         <li>Set up your business details and currency in Settings.</li>
         <li>Create your first invoice in seconds.</li>
       </ul>
-      <a href="https://chaseflowgpf.lovable.app/dashboard"
+      <a href="${siteUrl()}/dashboard"
          style="display:inline-block;background:#1d4ed8;color:#ffffff;text-decoration:none;padding:12px 22px;border-radius:8px;font-weight:600;font-size:14px;">
          Open ChaseFlow
       </a>
