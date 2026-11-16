@@ -11,3 +11,8 @@ export function getCurrencySymbol(code: string): string {
   };
   return map[code] || code + ' ';
 }
+
+/** Money amounts shown on invoices: thousands separators and always two decimals (12.5 -> 12.50). */
+export function formatAmount(n: number | null | undefined): string {
+  return Number(n ?? 0).toLocaleString('en-GB', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}

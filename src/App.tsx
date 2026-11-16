@@ -21,6 +21,8 @@ import ReviewFeedbackPage from "./pages/ReviewFeedbackPage";
 import AdminSurveyReportsPage from "./pages/AdminSurveyReportsPage";
 import EmailDeliveryReportPage from "./pages/EmailDeliveryReportPage";
 import AdminSchedulerReportPage from "./pages/AdminSchedulerReportPage";
+import TermsPage from "./pages/TermsPage";
+import PrivacyPage from "./pages/PrivacyPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -52,6 +54,8 @@ function AppRoutes() {
       <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignupPage />} />
+      <Route path="/terms" element={<TermsPage />} />
+      <Route path="/privacy" element={<PrivacyPage />} />
       <Route path="/dashboard" element={<ProtectedRoute permKey="dashboard"><DashboardPage /></ProtectedRoute>} />
       <Route path="/create-invoice" element={<ProtectedRoute permKey="create_invoice"><CreateInvoicePage type="regular" /></ProtectedRoute>} />
       <Route path="/create-invoice-hourly" element={<ProtectedRoute permKey="create_invoice"><CreateInvoicePage type="hourly" /></ProtectedRoute>} />
