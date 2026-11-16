@@ -4,6 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { Button } from '@/components/ui/button';
 import BrandingFields from './BrandingFields';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 export default function BrandingOnboarding() {
   const { user, updateUser } = useApp();
   const [name, setName] = useState(user?.company_name ?? '');
@@ -12,7 +13,14 @@ export default function BrandingOnboarding() {
   if (!user || user.branding_onboarded) return null;
   const save = async (skip: boolean) => {
     setBusy(true);
-    try { await updateUser({ ...(skip ? {} : { company_name: name, logo_path: logo }), branding_onboarded: true }); }
+    try {
+      await updateUser({ ...(skip ? {} : { company_name: name, logo_path: logo }), branding_onboarded: true });
+      // First login finished: send the welcome email once. This dialog never shows again
+      // after branding_onboarded is saved, so the email is not repeated. Failure is not shown.
+      supabase.functions
+        .invoke('send-welcome-email', { body: { full_name: user.full_name } })
+        .catch(e => console.warn('welcome email failed', e));
+    }
     catch (error) { toast.error(error instanceof Error ? error.message : 'Could not save branding'); }
     finally { setBusy(false); }
   };

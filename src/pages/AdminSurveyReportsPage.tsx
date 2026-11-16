@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, Download, FileSpreadsheet, Eye } from 'lucide-react';
 import { downloadCsv, downloadExcel } from '@/lib/exportUtils';
+import { fetchAllRows } from '@/lib/fetchAll';
+import { toast } from 'sonner';
 import TablePagination from '@/components/TablePagination';
 
 interface SurveyRow {
@@ -56,11 +58,16 @@ export default function AdminSurveyReportsPage() {
   useEffect(() => {
     const fetch = async () => {
       setLoading(true);
-      const [{ data }, { data: qs }] = await Promise.all([
-        supabase.from('survey_reports_view').select('*').order('created_at', { ascending: false }),
+      const [allRows, { data: qs }] = await Promise.all([
+        fetchAllRows<SurveyRow>((from, to) =>
+          supabase.from('survey_reports_view').select('*').order('created_at', { ascending: false }).order('submission_id').range(from, to) as any,
+        ).catch(() => {
+          toast.error('Could not load all survey responses. Please refresh.');
+          return null;
+        }),
         supabase.from('survey_questions').select('id, question_text, question_order, question_key, answer_type').eq('is_active', true).order('question_order'),
       ]);
-      if (data) setRows(data as SurveyRow[]);
+      if (allRows) setRows(allRows);
       if (qs) setQuestions(qs as SurveyQuestion[]);
       setLoading(false);
     };
@@ -149,7 +156,7 @@ export default function AdminSurveyReportsPage() {
               <Download className="h-4 w-4 mr-1" /> CSV
             </Button>
             <Button variant="outline" size="sm" onClick={() => downloadExcel(exportData, 'survey-report')} disabled={filtered.length === 0}>
-              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel
+              <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel (.xls)
             </Button>
           </div>
         </div>

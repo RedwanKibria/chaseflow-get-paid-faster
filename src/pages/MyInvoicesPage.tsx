@@ -72,8 +72,11 @@ export default function MyInvoicesPage() {
 
   const selectedInvoices = useMemo(() => filtered.filter(i => selected.has(i.id)), [filtered, selected]);
 
+  // With rows ticked, export those; otherwise export every invoice that matches the filters.
+  const exportInvoices = selected.size > 0 ? selectedInvoices : filtered;
+
   const bulkExportData = useMemo(() => {
-    return selectedInvoices.map(inv => ({
+    return exportInvoices.map(inv => ({
       'Invoice Code': inv.invoice_code,
       'Type': inv.invoice_type,
       'Client': inv.client_name,
@@ -91,7 +94,7 @@ export default function MyInvoicesPage() {
       'Status': inv.status,
       'Paid': inv.paid ? 'Yes' : 'No',
     }));
-  }, [selectedInvoices]);
+  }, [exportInvoices]);
 
   const handleConfirmDelete = async () => {
     if (deleteTarget) {
@@ -108,13 +111,13 @@ export default function MyInvoicesPage() {
             <h1 className="text-2xl font-bold text-foreground mb-1">My Invoices</h1>
             <p className="text-muted-foreground">Manage and track all your invoices</p>
           </div>
-          {selected.size > 0 && (
+          {filtered.length > 0 && (
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => downloadCsv(bulkExportData, 'invoices-export')}>
-                <Download className="h-4 w-4 mr-1" /> CSV ({selected.size})
+                <Download className="h-4 w-4 mr-1" /> CSV ({selected.size > 0 ? selected.size : `all ${filtered.length}`})
               </Button>
               <Button variant="outline" size="sm" onClick={() => downloadExcel(bulkExportData, 'invoices-export')}>
-                <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel ({selected.size})
+                <FileSpreadsheet className="h-4 w-4 mr-1" /> Excel .xls ({selected.size > 0 ? selected.size : `all ${filtered.length}`})
               </Button>
             </div>
           )}

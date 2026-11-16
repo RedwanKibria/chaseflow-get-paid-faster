@@ -50,12 +50,11 @@ Deno.serve(async (req) => {
     <div style="background:#ffffff;border:1px solid #e5e7eb;border-radius:12px;padding:32px;">
       <h1 style="margin:0 0 12px;font-size:22px;color:#1d4ed8;">Welcome to ChaseFlow, ${safeName}!</h1>
       <p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 16px;">
-        Thanks for signing up. ChaseFlow helps you create professional invoices, automate payment reminders,
+        Thanks for joining. ChaseFlow helps you create professional invoices, automate payment reminders,
         and keep your cash flow predictable.
       </p>
       <p style="font-size:14px;line-height:1.6;color:#334155;margin:0 0 24px;">Here's what to do next:</p>
       <ul style="font-size:14px;line-height:1.7;color:#334155;padding-left:20px;margin:0 0 24px;">
-        <li>Confirm your email (check your inbox for the verification link).</li>
         <li>Set up your business details and currency in Settings.</li>
         <li>Create your first invoice in seconds.</li>
       </ul>

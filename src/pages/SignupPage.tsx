@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useApp } from '@/context/AppContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -28,11 +27,9 @@ export default function SignupPage() {
     if (err) {
       setError(err);
     } else {
+      // The welcome email is sent after the first login (see BrandingOnboarding), when the
+      // new user has a verified session. Calling it here would be rejected as unauthenticated.
       setSuccess('Account created! Please check your email to verify, then log in.');
-      // Fire-and-forget welcome email via Resend (don't block UI on failure).
-      supabase.functions
-        .invoke('send-welcome-email', { body: { email, full_name: name } })
-        .catch((e) => console.warn('welcome email failed', e));
     }
   };
 
