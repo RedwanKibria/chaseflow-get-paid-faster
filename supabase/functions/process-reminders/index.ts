@@ -1,5 +1,6 @@
 // Daily reminder processor: marks reminders sent and emails clients via Resend.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { authenticateCronRequest } from "../_shared/cron-auth.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -87,6 +88,9 @@ async function sendViaResend(to: string, replyTo: string | null, subject: string
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: corsHeaders });
+
+  const authFailure = authenticateCronRequest(req);
+  if (authFailure) return authFailure;
 
   try {
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
